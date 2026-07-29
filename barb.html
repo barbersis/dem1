@@ -1,0 +1,1359 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Barbería Garage — Barbero</title>
+<style>
+  :root{
+    --fondo:#0d0d0d;
+    --panel:#181818;
+    --panel2:#1f1f1f;
+    --borde:#2c2c2c;
+    --texto:#f2f2f2;
+    --texto-suave:#9a9a9a;
+    --ambar:#e8a33d;
+    --ambar-claro:#f5c26b;
+    --verde:#4caf50;
+    --rojo:#e05c5c;
+    --azul:#8ab8e8;
+  }
+  *{ box-sizing:border-box; margin:0; padding:0; }
+  body{
+    background:var(--fondo);
+    color:var(--texto);
+    font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    min-height:100vh;
+  }
+  button{ font-family:inherit; }
+
+  /* ===== PANTALLA DE PIN ===== */
+  #pantallaPin{
+    min-height:100vh;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:20px;
+    background:
+      radial-gradient(ellipse at top, rgba(232,163,61,0.08), transparent 55%),
+      var(--fondo);
+  }
+  .cajaPin{
+    width:100%;
+    max-width:340px;
+    text-align:center;
+  }
+  .logoPin{
+    font-size:42px;
+    font-weight:800;
+    letter-spacing:1px;
+    line-height:1.05;
+    text-transform:uppercase;
+  }
+  .logoPin span{ color:var(--ambar); }
+  .subPin{
+    color:var(--texto-suave);
+    font-size:14px;
+    margin-top:4px;
+    margin-bottom:28px;
+  }
+
+  .puntosPin{
+    display:flex;
+    justify-content:center;
+    gap:16px;
+    margin-bottom:28px;
+  }
+  .puntoPin{
+    width:16px;
+    height:16px;
+    border-radius:50%;
+    border:2px solid var(--borde);
+    transition:all 0.15s;
+  }
+  .puntoPin.lleno{
+    background:var(--ambar);
+    border-color:var(--ambar);
+    box-shadow:0 0 12px rgba(232,163,61,0.5);
+  }
+  .puntosPin.error .puntoPin{
+    border-color:var(--rojo);
+    background:transparent;
+    box-shadow:none;
+  }
+
+  .tecladoPin{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:14px;
+    max-width:280px;
+    margin:0 auto;
+  }
+  .tecla{
+    aspect-ratio:1;
+    border-radius:50%;
+    border:1px solid var(--borde);
+    background:var(--panel);
+    color:var(--texto);
+    font-size:24px;
+    font-weight:600;
+    cursor:pointer;
+    transition:background 0.1s, transform 0.05s;
+  }
+  .tecla:active{
+    background:var(--ambar);
+    color:#121212;
+    transform:scale(0.95);
+  }
+  .tecla.accion{
+    border:none;
+    background:none;
+    font-size:15px;
+    color:var(--texto-suave);
+  }
+  #msgPin{
+    color:var(--rojo);
+    font-size:14px;
+    margin-top:20px;
+    min-height:18px;
+  }
+
+  /* ===== PANTALLA PRINCIPAL DEL BARBERO ===== */
+  #pantallaBarbero{ display:none; }
+  header{
+    background:linear-gradient(180deg, var(--panel) 0%, var(--fondo) 100%);
+    border-bottom:1px solid var(--borde);
+    padding:18px 16px;
+  }
+  .headerContenido{
+    max-width:600px;
+    margin:0 auto;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+  }
+  #nombreBarbero{
+    font-size:24px;
+    font-weight:800;
+  }
+  #fechaHeader{
+    color:var(--texto-suave);
+    font-size:13px;
+    margin-top:2px;
+  }
+  #btnCerrarSesion{
+    background:none;
+    border:1px solid var(--borde);
+    color:var(--texto-suave);
+    padding:9px 15px;
+    border-radius:9px;
+    font-size:14px;
+    cursor:pointer;
+  }
+  main{
+    padding:16px 16px 60px;
+    max-width:600px;
+    margin:0 auto;
+  }
+
+  /* ===== TARJETA CLIENTES HOY ===== */
+  .cardClientes{
+    background:linear-gradient(135deg, var(--panel2) 0%, var(--panel) 100%);
+    border:1px solid var(--borde);
+    border-radius:16px;
+    padding:18px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    box-shadow:0 4px 20px rgba(0,0,0,0.3);
+  }
+  .cardClientes .textos .titulo{
+    font-size:12px;
+    color:var(--texto-suave);
+    text-transform:uppercase;
+    letter-spacing:1px;
+  }
+  .cardClientes .textos .sub{
+    font-size:13px;
+    color:var(--texto-suave);
+    margin-top:4px;
+  }
+  #numClientes{
+    font-size:44px;
+    font-weight:900;
+    color:var(--texto);
+  }
+  #prodHoy{
+    color:var(--ambar);
+    font-weight:700;
+  }
+
+  .avance{
+    background:var(--panel);
+    border:1px dashed var(--borde);
+    border-radius:14px;
+    padding:24px;
+    text-align:center;
+    color:var(--texto-suave);
+    font-size:14px;
+    margin-top:16px;
+  }
+
+  /* ===== TICKET ACTUAL ===== */
+  .tituloSeccion{
+    font-size:12px;
+    color:var(--texto-suave);
+    text-transform:uppercase;
+    letter-spacing:1px;
+    margin:24px 0 10px;
+  }
+  .cardTicket{
+    background:linear-gradient(135deg, #241d10 0%, var(--panel) 60%);
+    border:1px solid #4a3a1c;
+    border-radius:16px;
+    padding:18px;
+    box-shadow:0 4px 20px rgba(0,0,0,0.35);
+  }
+  .filaTotal{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+  }
+  .filaTotal .textoTotal{
+    color:var(--texto-suave);
+    font-size:14px;
+  }
+  #totalTicket{
+    font-size:38px;
+    font-weight:900;
+    color:var(--ambar-claro);
+    text-shadow:0 0 18px rgba(232,163,61,0.35);
+  }
+  #itemsTicket{
+    margin-top:6px;
+    display:flex;
+    flex-direction:column;
+  }
+  .itemTicket{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    padding:10px 0;
+    border-top:1px solid rgba(255,255,255,0.07);
+    font-size:14px;
+  }
+  .itemTicket .nomItem{
+    flex:1;
+    min-width:0;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .itemTicket .precioItem{ font-weight:700; white-space:nowrap; }
+  .btnQuitarItem{
+    width:28px;
+    height:28px;
+    border-radius:50%;
+    border:1px solid #5c3030;
+    background:none;
+    color:var(--rojo);
+    font-size:14px;
+    cursor:pointer;
+    flex-shrink:0;
+  }
+
+  /* ===== CATÁLOGO ===== */
+  .gridServicios{
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+  }
+  .btnServicio{
+    background:var(--panel);
+    border:1px solid var(--borde);
+    border-radius:13px;
+    padding:14px;
+    text-align:left;
+    color:var(--texto);
+    cursor:pointer;
+    transition:border-color 0.1s, transform 0.05s;
+  }
+  .btnServicio:active{
+    border-color:var(--ambar);
+    transform:scale(0.98);
+  }
+  .btnServicio .nomServ{
+    font-size:14px;
+    font-weight:600;
+  }
+  .btnServicio .precioServ{
+    color:var(--ambar);
+    font-size:14px;
+    font-weight:700;
+    margin-top:4px;
+  }
+
+  /* ===== MONTO ESPECIAL ===== */
+  .chipsConcepto{
+    display:grid;
+    grid-template-columns:repeat(4, 1fr);
+    gap:8px;
+    margin-bottom:10px;
+  }
+  .chip{
+    padding:11px 4px;
+    font-size:13px;
+    font-weight:600;
+    border-radius:10px;
+    border:1px solid var(--borde);
+    background:var(--panel);
+    color:var(--texto);
+    cursor:pointer;
+    overflow:hidden;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+  }
+  .chip.activo{
+    background:var(--ambar);
+    color:#121212;
+    border-color:var(--ambar);
+  }
+  #especialConcepto{
+    display:none;
+    width:100%;
+    padding:13px;
+    font-size:15px;
+    border-radius:11px;
+    border:1px solid var(--borde);
+    background:var(--panel);
+    color:var(--texto);
+    margin-bottom:10px;
+  }
+  #especialConcepto:focus{ outline:none; border-color:var(--ambar); }
+  .filaEspecial{
+    display:grid;
+    grid-template-columns:1fr auto;
+    gap:10px;
+  }
+  #especialMonto{
+    width:100%;
+    padding:13px;
+    font-size:15px;
+    border-radius:11px;
+    border:1px solid var(--borde);
+    background:var(--panel);
+    color:var(--texto);
+  }
+  #especialMonto:focus{ outline:none; border-color:var(--ambar); }
+  #especialAgregar{
+    padding:13px 18px;
+    font-size:14px;
+    font-weight:700;
+    border:none;
+    border-radius:11px;
+    background:var(--panel2);
+    border:1px solid var(--borde);
+    color:var(--texto);
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  #especialMsg{
+    color:var(--rojo);
+    font-size:13px;
+    margin-top:8px;
+    min-height:16px;
+  }
+
+  /* ===== BOTÓN ENVIAR ===== */
+  #btnEnviar{
+    width:100%;
+    margin-top:24px;
+    padding:17px;
+    font-size:17px;
+    font-weight:800;
+    border:none;
+    border-radius:14px;
+    background:linear-gradient(135deg, var(--ambar-claro), var(--ambar));
+    color:#121212;
+    cursor:pointer;
+    box-shadow:0 4px 18px rgba(232,163,61,0.25);
+  }
+  #btnEnviar:disabled{
+    background:var(--panel);
+    color:var(--texto-suave);
+    box-shadow:none;
+    border:1px solid var(--borde);
+    cursor:default;
+  }
+  #notaEnviar{
+    color:var(--texto-suave);
+    font-size:12px;
+    text-align:center;
+    margin-top:8px;
+    min-height:16px;
+  }
+
+  /* ===== MIS TICKETS DE HOY ===== */
+  #listaMisTickets{
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+  }
+  .tarjetaMio{
+    background:var(--panel);
+    border:1px solid var(--borde);
+    border-radius:13px;
+    padding:12px 14px;
+  }
+  .tarjetaMio .filaMio{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+  }
+  .tarjetaMio .serviciosMio{
+    flex:1;
+    min-width:0;
+    font-size:14px;
+    font-weight:600;
+  }
+  .tarjetaMio .montoMio{
+    font-weight:800;
+    font-size:16px;
+    white-space:nowrap;
+  }
+  .tarjetaMio .horaMio{
+    color:var(--texto-suave);
+    font-size:12px;
+    margin-top:3px;
+  }
+  .badge{
+    display:inline-block;
+    font-size:11px;
+    font-weight:700;
+    padding:3px 10px;
+    border-radius:20px;
+    margin-top:6px;
+  }
+  .badge.pendiente{ background:#3a2f14; color:var(--ambar-claro); }
+  .badge.cobrado{ background:#1e3320; color:#8fd694; }
+  .accionesMio{
+    display:flex;
+    gap:8px;
+    margin-top:10px;
+  }
+  .btnMio{
+    flex:1;
+    padding:10px;
+    font-size:13px;
+    font-weight:600;
+    border-radius:9px;
+    border:1px solid var(--borde);
+    background:var(--fondo);
+    color:var(--texto);
+    cursor:pointer;
+  }
+  .btnMio.rojo{
+    border-color:#5c3030;
+    color:var(--rojo);
+  }
+  .vacioMio{
+    background:var(--panel);
+    border:1px dashed var(--borde);
+    border-radius:13px;
+    padding:18px;
+    text-align:center;
+    color:var(--texto-suave);
+    font-size:13px;
+  }
+
+  /* ===== MODAL DE MONTO (servicios "desde") ===== */
+  .fondoModal{
+    display:none;
+    position:fixed;
+    inset:0;
+    background:rgba(0,0,0,0.75);
+    z-index:100;
+    align-items:flex-end;
+    justify-content:center;
+  }
+  .fondoModal.abierto{ display:flex; }
+  .modal{
+    background:var(--panel);
+    border:1px solid var(--borde);
+    border-radius:18px 18px 0 0;
+    padding:22px 18px 28px;
+    width:100%;
+    max-width:600px;
+  }
+  @media(min-width:640px){
+    .fondoModal{ align-items:center; }
+    .modal{ border-radius:18px; }
+  }
+  .modal h3{ font-size:18px; margin-bottom:6px; }
+  .modal .subModal{
+    color:var(--texto-suave);
+    font-size:13px;
+    margin-bottom:14px;
+  }
+  .modal label{
+    display:block;
+    font-size:13px;
+    color:var(--texto-suave);
+    margin:14px 0 6px;
+  }
+  .modal input{
+    width:100%;
+    padding:14px;
+    font-size:18px;
+    border-radius:11px;
+    border:1px solid var(--borde);
+    background:var(--fondo);
+    color:var(--texto);
+    text-align:center;
+  }
+  .modal input:focus{ outline:none; border-color:var(--ambar); }
+  .btnModalPrincipal{
+    width:100%;
+    margin-top:16px;
+    padding:15px;
+    font-size:16px;
+    font-weight:700;
+    border:none;
+    border-radius:12px;
+    background:var(--ambar);
+    color:#121212;
+    cursor:pointer;
+  }
+  .btnModalCancelar{
+    width:100%;
+    margin-top:10px;
+    padding:12px;
+    font-size:14px;
+    background:none;
+    border:1px solid var(--borde);
+    color:var(--texto-suave);
+    border-radius:10px;
+    cursor:pointer;
+  }
+  .msgModal{
+    color:var(--rojo);
+    font-size:13px;
+    margin-top:8px;
+    min-height:16px;
+    text-align:center;
+  }
+
+  #detalleError{
+    display:none;
+    margin-top:16px;
+    background:#2a1a1a;
+    border:1px solid #5c3030;
+    border-radius:10px;
+    padding:14px;
+    font-size:13px;
+    color:#e0a0a0;
+    word-break:break-word;
+  }
+</style>
+</head>
+<body>
+
+<!-- PANTALLA DE PIN -->
+<div id="pantallaPin">
+  <div class="cajaPin">
+    <div class="logoPin">Barbería<br><span>Garage</span></div>
+    <div class="subPin">Ingresa tu PIN de barbero</div>
+
+    <div class="puntosPin" id="puntosPin">
+      <div class="puntoPin"></div>
+      <div class="puntoPin"></div>
+      <div class="puntoPin"></div>
+      <div class="puntoPin"></div>
+    </div>
+
+    <div class="tecladoPin" id="tecladoPin">
+      <button class="tecla" data-num="1">1</button>
+      <button class="tecla" data-num="2">2</button>
+      <button class="tecla" data-num="3">3</button>
+      <button class="tecla" data-num="4">4</button>
+      <button class="tecla" data-num="5">5</button>
+      <button class="tecla" data-num="6">6</button>
+      <button class="tecla" data-num="7">7</button>
+      <button class="tecla" data-num="8">8</button>
+      <button class="tecla" data-num="9">9</button>
+      <button class="tecla accion" data-accion="limpiar">Borrar</button>
+      <button class="tecla" data-num="0">0</button>
+      <button class="tecla accion" data-accion="quitar">⌫</button>
+    </div>
+
+    <div id="msgPin"></div>
+  </div>
+</div>
+
+<!-- PANTALLA PRINCIPAL DEL BARBERO -->
+<div id="pantallaBarbero">
+  <header>
+    <div class="headerContenido">
+      <div>
+        <div id="nombreBarbero">Barbero</div>
+        <div id="fechaHeader"></div>
+      </div>
+      <button id="btnCerrarSesion">Cerrar sesión</button>
+    </div>
+  </header>
+  <main>
+    <div class="cardClientes">
+      <div class="textos">
+        <div class="titulo">Clientes hoy</div>
+        <div class="sub" id="subClientes">Aún sin clientes</div>
+      </div>
+      <div id="numClientes">0</div>
+    </div>
+
+    <div class="tituloSeccion">Ticket actual</div>
+    <div class="cardTicket">
+      <div class="filaTotal">
+        <span class="textoTotal">Total a cobrar</span>
+        <span id="totalTicket">$0</span>
+      </div>
+      <div id="itemsTicket"></div>
+    </div>
+
+    <div class="tituloSeccion">Servicios</div>
+    <div class="gridServicios" id="gridServicios"></div>
+
+    <div class="tituloSeccion">Paquetes</div>
+    <div class="gridServicios" id="gridPaquetes"></div>
+
+    <div class="tituloSeccion">Monto especial</div>
+    <div class="chipsConcepto" id="chipsConcepto">
+      <button class="chip" data-con="Pigmento">Pigmento</button>
+      <button class="chip" data-con="Grecas">Grecas</button>
+      <button class="chip" data-con="Ondulado">Ondulado</button>
+      <button class="chip" data-con="Otro">Otro</button>
+    </div>
+    <input type="text" id="especialConcepto" placeholder="¿Qué servicio es?" autocomplete="off">
+    <div class="filaEspecial">
+      <input type="number" id="especialMonto" placeholder="$ Ingresa monto" inputmode="numeric" min="0">
+      <button id="especialAgregar">+ Agregar</button>
+    </div>
+    <div id="especialMsg"></div>
+
+    <button id="btnEnviar" disabled>Enviar ticket</button>
+    <div id="notaEnviar"></div>
+
+    <div class="tituloSeccion">Mis tickets de hoy</div>
+    <div id="listaMisTickets">
+      <div class="vacioMio">Aún no has enviado tickets hoy.</div>
+    </div>
+
+    <div id="detalleError"></div>
+  </main>
+</div>
+
+<!-- MODAL DE MONTO PARA SERVICIOS "DESDE" -->
+<div class="fondoModal" id="modalMonto">
+  <div class="modal">
+    <h3 id="montoTitulo">Servicio</h3>
+    <div class="subModal" id="montoSub">Ajusta el monto</div>
+    <label>Monto ($)</label>
+    <input type="number" id="montoInput" inputmode="numeric" min="0">
+    <button class="btnModalPrincipal" id="montoAgregar">Agregar al ticket</button>
+    <div class="msgModal" id="montoMsg"></div>
+    <button class="btnModalCancelar" id="montoCancelar">Cancelar</button>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import {
+    getFirestore, collection, getDocs, doc, getDoc, addDoc, deleteDoc,
+    query, where, onSnapshot, serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  // ##############################################################
+  // #                                                            #
+  // #   CONFIGURA AQUÍ POR CLIENTE  —  (lo único que se cambia)  #
+  // #                                                            #
+  // #   Pega la MISMA config de Firebase que pusiste en bg17.    #
+  // #   Ambos archivos deben apuntar al mismo proyecto.          #
+  // #   (El nombre del negocio se edita a mano en los títulos)   #
+  // #                                                            #
+  // ##############################################################
+  const CONFIG = {
+    firebase: {
+      apiKey: "AIzaSyCPJ_Sp727Gsq0qholS8466L2xoF6ju6Qs",
+      authDomain: "agend-1d0e5.firebaseapp.com",
+      projectId: "agend-1d0e5",
+      appId: "1:536059431228:web:f7a186659845111e09b639"
+    }
+  };
+  // ##############################################################
+  // #   FIN DE LA CONFIGURACIÓN — no edites nada abajo de aquí   #
+  // ##############################################################
+
+  const app = initializeApp(CONFIG.firebase);
+  const db  = getFirestore(app);
+
+  // ----- Fechas -----
+  function fechaHoy(){
+    const d = new Date();
+    const a = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const dia = String(d.getDate()).padStart(2, "0");
+    return a + "-" + m + "-" + dia;
+  }
+  function fechaLegible(){
+    const t = new Date().toLocaleDateString("es-MX", { weekday:"long", day:"numeric", month:"long" });
+    return t.charAt(0).toUpperCase() + t.slice(1);
+  }
+  document.getElementById("fechaHeader").textContent = fechaLegible();
+
+  function formatoDinero(n){
+    const r = Math.round(n * 100) / 100;
+    return "$" + r.toLocaleString("es-MX");
+  }
+
+  function formatoHora(ts){
+    if(!ts) return "";
+    const d = ts.toDate();
+    let h = d.getHours();
+    const m = String(d.getMinutes()).padStart(2, "0");
+    const ampm = h >= 12 ? "p.m." : "a.m.";
+    h = h % 12; if(h === 0) h = 12;
+    return h + ":" + m + " " + ampm;
+  }
+
+  // ============================================================
+  // SESIÓN DEL BARBERO (5 horas por dispositivo)
+  // ============================================================
+  const CLAVE_SESION = "garageBarberoSesion";
+  const DURACION_SESION = 5 * 60 * 60 * 1000; // 5 horas
+
+  const pantallaPin     = document.getElementById("pantallaPin");
+  const pantallaBarbero = document.getElementById("pantallaBarbero");
+  const nombreBarberoEl = document.getElementById("nombreBarbero");
+  const btnCerrarSesion = document.getElementById("btnCerrarSesion");
+  const detalle         = document.getElementById("detalleError");
+
+  let barberoActual = null;   // { num, nombre, vip, porcentaje, ... }
+  let pararClientes = null;   // para detener el listener al cerrar sesión
+  let pararPendientes = null; // listener de mis tickets pendientes
+
+  function mostrarError(err){
+    detalle.style.display = "block";
+    detalle.textContent = "Detalle del error: " + err.message;
+  }
+
+  function leerSesion(){
+    try{
+      const s = JSON.parse(localStorage.getItem(CLAVE_SESION));
+      if(!s || !s.num || !s.inicio) return null;
+      if(Date.now() - s.inicio >= DURACION_SESION) return null;
+      return s;
+    } catch(e){ return null; }
+  }
+
+  function guardarSesion(num){
+    localStorage.setItem(CLAVE_SESION, JSON.stringify({ num: num, inicio: Date.now() }));
+  }
+
+  function cerrarSesion(){
+    localStorage.removeItem(CLAVE_SESION);
+    if(pararClientes){ pararClientes(); pararClientes = null; }
+    if(pararPendientes){ pararPendientes(); pararPendientes = null; }
+    barberoActual = null;
+    pantallaBarbero.style.display = "none";
+    pantallaPin.style.display = "flex";
+    limpiarPin();
+  }
+
+  btnCerrarSesion.addEventListener("click", cerrarSesion);
+
+  // ============================================================
+  // ENTRAR: cargar datos del barbero y arrancar su pantalla
+  // ============================================================
+  async function entrarComoBarbero(num){
+    const s = await getDoc(doc(db, "barberos", String(num)));
+    if(!s.exists() || s.data().activo === false){
+      return false;
+    }
+    barberoActual = { id: s.id, ...s.data() };
+
+    nombreBarberoEl.textContent = barberoActual.nombre || ("Barbero " + barberoActual.num);
+    pantallaPin.style.display = "none";
+    pantallaBarbero.style.display = "block";
+
+    renderCatalogo();
+    limpiarTicket();
+    escucharClientesHoy();
+    escucharMisPendientes();
+    return true;
+  }
+
+  // ============================================================
+  // CATÁLOGOS (regular y VIP)
+  // ============================================================
+  const CATALOGO_REGULAR = {
+    servicios: [
+      { n: "Corte de cabello",  p: 150 },
+      { n: "Arreglo de barba",  p: 150 },
+      { n: "Retoque contorno",  p: 90 },
+      { n: "Facial exfoliante", p: 70 },
+      { n: "Carbón activado",   p: 60 },
+      { n: "Limpieza profunda", p: 120 },
+      { n: "Limpieza de cejas", p: 50 },
+      { n: "Limpieza oídos",    p: 100 },
+      { n: "Pigmentado barba",  p: 90,  desde: true },
+      { n: "Diseño grecas",     p: 30,  desde: true }
+    ],
+    paquetes: [
+      { n: "Paq. Barbón",     p: 250 },
+      { n: "Paq. Plus+",      p: 250 },
+      { n: "Paq. Papi Chulo", p: 330 },
+      { n: "Paq. VIP",        p: 300 },
+      { n: "Paq. Patrón",     p: 370 },
+      { n: "Paq. Rey",        p: 570 }
+    ]
+  };
+
+  const CATALOGO_VIP = {
+    servicios: [
+      { n: "Corte de cabello",  p: 200 },
+      { n: "Arreglo de barba",  p: 200 },
+      { n: "Facial exfoliante", p: 80 },
+      { n: "Carbón activado",   p: 70 },
+      { n: "Limpieza profunda", p: 150 },
+      { n: "Limpieza de cejas", p: 60 },
+      { n: "Limpieza oídos",    p: 130 },
+      { n: "Pigmentado barba",  p: 150, desde: true },
+      { n: "Diseño grecas",     p: 150, desde: true }
+    ],
+    paquetes: [
+      { n: "Paq. Barbón",     p: 330 },
+      { n: "Paq. Plus+",      p: 330 },
+      { n: "Paq. Papi Chulo", p: 410 },
+      { n: "Paq. VIP",        p: 370 },
+      { n: "Paq. Patrón",     p: 470 },
+      { n: "Paq. Rey",        p: 700 }
+    ]
+  };
+
+  const gridServicios = document.getElementById("gridServicios");
+  const gridPaquetes  = document.getElementById("gridPaquetes");
+
+  function renderCatalogo(){
+    const cat = barberoActual.vip ? CATALOGO_VIP : CATALOGO_REGULAR;
+
+    function pintar(lista, contenedor){
+      contenedor.innerHTML = "";
+      lista.forEach(function(s){
+        const btn = document.createElement("button");
+        btn.className = "btnServicio";
+
+        const nom = document.createElement("div");
+        nom.className = "nomServ";
+        nom.textContent = s.n;
+
+        const precio = document.createElement("div");
+        precio.className = "precioServ";
+        precio.textContent = (s.desde ? "desde " : "") + formatoDinero(s.p);
+
+        btn.appendChild(nom);
+        btn.appendChild(precio);
+
+        btn.addEventListener("click", function(){
+          if(s.desde){
+            abrirModalMonto(s.n, s.p);
+          } else {
+            agregarItem(s.n, s.p);
+          }
+        });
+
+        contenedor.appendChild(btn);
+      });
+    }
+
+    pintar(cat.servicios, gridServicios);
+    pintar(cat.paquetes, gridPaquetes);
+  }
+
+  // ============================================================
+  // TICKET ACTUAL
+  // ============================================================
+  const totalTicket = document.getElementById("totalTicket");
+  const itemsTicket = document.getElementById("itemsTicket");
+  const btnEnviar   = document.getElementById("btnEnviar");
+
+  let itemsActuales = []; // [{concepto, monto}]
+
+  function limpiarTicket(){
+    itemsActuales = [];
+    renderTicket();
+  }
+
+  function agregarItem(concepto, monto){
+    itemsActuales.push({ concepto: concepto, monto: monto });
+    renderTicket();
+  }
+
+  function renderTicket(){
+    let total = 0;
+    itemsActuales.forEach(function(i){ total += i.monto; });
+    totalTicket.textContent = formatoDinero(total);
+
+    itemsTicket.innerHTML = "";
+    itemsActuales.forEach(function(i, idx){
+      const fila = document.createElement("div");
+      fila.className = "itemTicket";
+
+      const nom = document.createElement("span");
+      nom.className = "nomItem";
+      nom.textContent = i.concepto;
+
+      const precio = document.createElement("span");
+      precio.className = "precioItem";
+      precio.textContent = formatoDinero(i.monto);
+
+      const quitar = document.createElement("button");
+      quitar.className = "btnQuitarItem";
+      quitar.textContent = "✕";
+      quitar.addEventListener("click", function(){
+        itemsActuales.splice(idx, 1);
+        renderTicket();
+      });
+
+      fila.appendChild(nom);
+      fila.appendChild(precio);
+      fila.appendChild(quitar);
+      itemsTicket.appendChild(fila);
+    });
+
+    // Solo se puede enviar si hay servicios en el ticket
+    btnEnviar.disabled = itemsActuales.length === 0;
+  }
+
+  // ============================================================
+  // MODAL DE MONTO (servicios "desde")
+  // ============================================================
+  const modalMonto    = document.getElementById("modalMonto");
+  const montoTitulo   = document.getElementById("montoTitulo");
+  const montoSub      = document.getElementById("montoSub");
+  const montoInput    = document.getElementById("montoInput");
+  const montoAgregar  = document.getElementById("montoAgregar");
+  const montoCancelar = document.getElementById("montoCancelar");
+  const montoMsg      = document.getElementById("montoMsg");
+
+  let servicioDesde = null;
+
+  function abrirModalMonto(nombre, base){
+    servicioDesde = nombre;
+    montoTitulo.textContent = nombre;
+    montoSub.textContent = "Precio desde " + formatoDinero(base) + " — ajusta el monto";
+    montoInput.value = base;
+    montoMsg.textContent = "";
+    modalMonto.classList.add("abierto");
+  }
+
+  montoCancelar.addEventListener("click", function(){
+    modalMonto.classList.remove("abierto");
+    servicioDesde = null;
+  });
+
+  montoAgregar.addEventListener("click", function(){
+    const monto = parseFloat(montoInput.value);
+    if(isNaN(monto) || monto <= 0){
+      montoMsg.textContent = "Escribe un monto válido";
+      return;
+    }
+    agregarItem(servicioDesde, monto);
+    modalMonto.classList.remove("abierto");
+    servicioDesde = null;
+  });
+
+  // ============================================================
+  // MONTO ESPECIAL (Pigmento / Grecas / Ondulado / Otro)
+  // ============================================================
+  const chipsConcepto    = document.getElementById("chipsConcepto");
+  const especialConcepto = document.getElementById("especialConcepto");
+  const especialMonto    = document.getElementById("especialMonto");
+  const especialAgregar  = document.getElementById("especialAgregar");
+  const especialMsg      = document.getElementById("especialMsg");
+
+  let conceptoEspecial = null;
+
+  chipsConcepto.addEventListener("click", function(e){
+    const chip = e.target.closest(".chip");
+    if(!chip) return;
+    chipsConcepto.querySelectorAll(".chip").forEach(function(c){
+      c.classList.remove("activo");
+    });
+    chip.classList.add("activo");
+    conceptoEspecial = chip.dataset.con;
+    especialMsg.textContent = "";
+    // Si es "Otro", pedir el nombre del servicio
+    especialConcepto.style.display = conceptoEspecial === "Otro" ? "block" : "none";
+  });
+
+  especialAgregar.addEventListener("click", function(){
+    const monto = parseFloat(especialMonto.value);
+
+    if(conceptoEspecial === null){
+      especialMsg.textContent = "Elige el concepto (Pigmento, Grecas, Ondulado u Otro)";
+      return;
+    }
+    let concepto = conceptoEspecial;
+    if(conceptoEspecial === "Otro"){
+      concepto = especialConcepto.value.trim();
+      if(concepto === ""){
+        especialMsg.textContent = "Escribe qué servicio es";
+        return;
+      }
+    }
+    if(isNaN(monto) || monto <= 0){
+      especialMsg.textContent = "Escribe un monto válido";
+      return;
+    }
+
+    agregarItem(concepto, monto);
+
+    // Limpiar el formulario especial
+    especialMsg.textContent = "";
+    especialMonto.value = "";
+    especialConcepto.value = "";
+    especialConcepto.style.display = "none";
+    conceptoEspecial = null;
+    chipsConcepto.querySelectorAll(".chip").forEach(function(c){
+      c.classList.remove("activo");
+    });
+  });
+
+  // ============================================================
+  // ENVIAR TICKET A CAJA (colección "pendientes")
+  // ============================================================
+  const notaEnviar = document.getElementById("notaEnviar");
+  let enviando = false;
+
+  btnEnviar.addEventListener("click", async function(){
+    if(enviando || itemsActuales.length === 0 || !barberoActual) return;
+
+    enviando = true;
+    btnEnviar.disabled = true;
+    notaEnviar.style.color = "#9a9a9a";
+    notaEnviar.textContent = "Enviando...";
+
+    let total = 0;
+    const nombres = [];
+    const items = [];
+    itemsActuales.forEach(function(i){
+      total += i.monto;
+      nombres.push(i.concepto);
+      items.push({ concepto: i.concepto, monto: i.monto });
+    });
+
+    try{
+      await addDoc(collection(db, "pendientes"), {
+        barbero: barberoActual.num,
+        servicios: nombres,   // para mostrar en caja
+        items: items,         // detalle para poder corregir desde aquí
+        monto: total,
+        fecha: fechaHoy(),
+        origen: "bg18",
+        creado: serverTimestamp()
+      });
+      limpiarTicket();
+      notaEnviar.style.color = "#4caf50";
+      notaEnviar.textContent = "Ticket enviado ✓ — recepción lo cobrará";
+      setTimeout(function(){ notaEnviar.textContent = ""; }, 3500);
+    } catch(err){
+      notaEnviar.style.color = "#e05c5c";
+      notaEnviar.textContent = "Error al enviar: " + err.message;
+      btnEnviar.disabled = itemsActuales.length === 0;
+    }
+    enviando = false;
+  });
+
+  // ============================================================
+  // MIS TICKETS DE HOY (pendientes + cobrados, tiempo real)
+  // ============================================================
+  const listaMisTickets = document.getElementById("listaMisTickets");
+  let pendCache = [];
+  let cobradosCache = [];
+  let cancelandoId = null;   // pendiente esperando confirmación de cancelar
+  let procesandoMio = false;
+
+  function escucharMisPendientes(){
+    const consulta = query(
+      collection(db, "pendientes"),
+      where("fecha", "==", fechaHoy()),
+      where("barbero", "==", barberoActual.num)
+    );
+    pararPendientes = onSnapshot(consulta, function(snap){
+      pendCache = [];
+      snap.forEach(function(d){ pendCache.push({ id: d.id, ...d.data() }); });
+      cancelandoId = null;
+      renderMisTickets();
+    }, function(err){ mostrarError(err); });
+  }
+
+  function renderMisTickets(){
+    const todos = [];
+    pendCache.forEach(function(p){ todos.push({ ...p, estado: "pendiente" }); });
+    cobradosCache.forEach(function(c){ todos.push({ ...c, estado: "cobrado" }); });
+
+    todos.sort(function(a, b){
+      const ta = a.creado ? a.creado.toMillis() : Date.now();
+      const tb = b.creado ? b.creado.toMillis() : Date.now();
+      return tb - ta;
+    });
+
+    if(todos.length === 0){
+      listaMisTickets.innerHTML = '<div class="vacioMio">Aún no has enviado tickets hoy.</div>';
+      return;
+    }
+
+    listaMisTickets.innerHTML = "";
+    todos.forEach(function(t){
+      const tarjeta = document.createElement("div");
+      tarjeta.className = "tarjetaMio";
+
+      const fila = document.createElement("div");
+      fila.className = "filaMio";
+
+      const serv = document.createElement("div");
+      serv.className = "serviciosMio";
+      serv.textContent = t.estado === "cobrado"
+        ? (t.concepto || "Cobro")
+        : (Array.isArray(t.servicios) ? t.servicios.join(" + ") : "");
+
+      const monto = document.createElement("div");
+      monto.className = "montoMio";
+      monto.textContent = formatoDinero(t.monto);
+
+      fila.appendChild(serv);
+      fila.appendChild(monto);
+
+      const hora = document.createElement("div");
+      hora.className = "horaMio";
+      hora.textContent = formatoHora(t.creado);
+
+      const badge = document.createElement("span");
+      badge.className = "badge " + t.estado;
+      badge.textContent = t.estado === "cobrado" ? "Cobrado" : "Pendiente";
+
+      tarjeta.appendChild(fila);
+      tarjeta.appendChild(hora);
+      tarjeta.appendChild(badge);
+
+      // Solo los pendientes se pueden corregir o cancelar
+      if(t.estado === "pendiente"){
+        const acciones = document.createElement("div");
+        acciones.className = "accionesMio";
+
+        const btnCorregir = document.createElement("button");
+        btnCorregir.className = "btnMio";
+        btnCorregir.textContent = "Corregir";
+        btnCorregir.addEventListener("click", function(){ corregirPendiente(t); });
+
+        const btnCancelarT = document.createElement("button");
+        btnCancelarT.className = "btnMio rojo";
+        btnCancelarT.textContent = cancelandoId === t.id ? "¿Seguro? Toca de nuevo" : "Cancelar";
+        btnCancelarT.addEventListener("click", function(){ cancelarPendiente(t); });
+
+        acciones.appendChild(btnCorregir);
+        acciones.appendChild(btnCancelarT);
+        tarjeta.appendChild(acciones);
+      }
+
+      listaMisTickets.appendChild(tarjeta);
+    });
+  }
+
+  // Corregir: regresa los servicios al ticket actual y quita el pendiente de caja
+  async function corregirPendiente(t){
+    if(procesandoMio) return;
+    procesandoMio = true;
+    try{
+      // Verificar que siga pendiente (que recepción no lo haya cobrado justo ahora)
+      const ref = doc(db, "pendientes", t.id);
+      const s = await getDoc(ref);
+      if(!s.exists()){
+        notaEnviar.style.color = "#e05c5c";
+        notaEnviar.textContent = "Ese ticket ya fue cobrado en caja";
+        setTimeout(function(){ notaEnviar.textContent = ""; }, 3500);
+        procesandoMio = false;
+        return;
+      }
+      await deleteDoc(ref);
+
+      // Regresar los servicios al ticket actual para editarlos
+      if(Array.isArray(t.items) && t.items.length > 0){
+        itemsActuales = t.items.map(function(i){
+          return { concepto: i.concepto, monto: i.monto };
+        });
+      } else {
+        itemsActuales = [{
+          concepto: Array.isArray(t.servicios) ? t.servicios.join(" + ") : "Ticket",
+          monto: t.monto
+        }];
+      }
+      renderTicket();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } catch(err){
+      mostrarError(err);
+    }
+    procesandoMio = false;
+  }
+
+  // Cancelar: elimina el pendiente (con doble toque de confirmación)
+  async function cancelarPendiente(t){
+    if(procesandoMio) return;
+    if(cancelandoId !== t.id){
+      cancelandoId = t.id;
+      renderMisTickets();
+      return;
+    }
+    procesandoMio = true;
+    try{
+      const ref = doc(db, "pendientes", t.id);
+      const s = await getDoc(ref);
+      if(s.exists()){
+        await deleteDoc(ref);
+      }
+    } catch(err){
+      mostrarError(err);
+    }
+    cancelandoId = null;
+    procesandoMio = false;
+  }
+
+  // ----- Clientes de hoy (tickets ya cobrados en caja) -----
+  const numClientes = document.getElementById("numClientes");
+  const subClientes = document.getElementById("subClientes");
+
+  function escucharClientesHoy(){
+    const consulta = query(
+      collection(db, "tickets"),
+      where("fecha", "==", fechaHoy()),
+      where("barbero", "==", barberoActual.num)
+    );
+    pararClientes = onSnapshot(consulta, function(snap){
+      let total = 0;
+      cobradosCache = [];
+      snap.forEach(function(d){
+        total += d.data().monto;
+        cobradosCache.push({ id: d.id, ...d.data() });
+      });
+      numClientes.textContent = snap.size;
+      if(snap.size === 0){
+        subClientes.textContent = "Aún sin clientes";
+      } else {
+        subClientes.innerHTML = 'Producción: <span id="prodHoy">' + formatoDinero(total) + '</span>';
+      }
+      renderMisTickets();
+    }, function(err){ mostrarError(err); });
+  }
+
+  // ============================================================
+  // TECLADO DE PIN
+  // ============================================================
+  const puntosPin  = document.getElementById("puntosPin");
+  const tecladoPin = document.getElementById("tecladoPin");
+  const msgPin     = document.getElementById("msgPin");
+
+  let pinActual = "";
+  let validandoPin = false;
+
+  function pintarPuntos(){
+    const puntos = puntosPin.querySelectorAll(".puntoPin");
+    puntos.forEach(function(p, i){
+      p.classList.toggle("lleno", i < pinActual.length);
+    });
+  }
+
+  function limpiarPin(){
+    pinActual = "";
+    puntosPin.classList.remove("error");
+    msgPin.textContent = "";
+    pintarPuntos();
+  }
+
+  async function validarPin(){
+    if(validandoPin) return;
+    validandoPin = true;
+    msgPin.style.color = "#9a9a9a";
+    msgPin.textContent = "Verificando...";
+
+    try{
+      // Buscar barbero activo con ese PIN
+      const consulta = query(collection(db, "barberos"), where("pin", "==", pinActual));
+      const res = await getDocs(consulta);
+
+      let encontrado = null;
+      res.forEach(function(d){
+        const b = d.data();
+        if(b.activo !== false && encontrado === null) encontrado = b;
+      });
+
+      if(encontrado){
+        guardarSesion(encontrado.num);
+        await entrarComoBarbero(encontrado.num);
+        limpiarPin();
+      } else {
+        puntosPin.classList.add("error");
+        msgPin.style.color = "#e05c5c";
+        msgPin.textContent = "PIN incorrecto";
+        setTimeout(limpiarPin, 900);
+      }
+    } catch(err){
+      msgPin.style.color = "#e05c5c";
+      msgPin.textContent = "Error de conexión: " + err.message;
+      setTimeout(limpiarPin, 1500);
+    }
+
+    validandoPin = false;
+  }
+
+  tecladoPin.addEventListener("click", function(e){
+    const btn = e.target.closest(".tecla");
+    if(!btn || validandoPin) return;
+
+    if(btn.dataset.accion === "limpiar"){
+      limpiarPin();
+      return;
+    }
+    if(btn.dataset.accion === "quitar"){
+      pinActual = pinActual.slice(0, -1);
+      puntosPin.classList.remove("error");
+      msgPin.textContent = "";
+      pintarPuntos();
+      return;
+    }
+    if(pinActual.length >= 4) return;
+
+    pinActual += btn.dataset.num;
+    pintarPuntos();
+
+    if(pinActual.length === 4){
+      validarPin();
+    }
+  });
+
+  // ============================================================
+  // ARRANQUE: si hay sesión viva, entrar directo
+  // ============================================================
+  const sesion = leerSesion();
+  if(sesion){
+    entrarComoBarbero(sesion.num).then(function(ok){
+      if(!ok) cerrarSesion(); // barbero dado de baja o inexistente
+    }).catch(function(err){
+      mostrarError(err);
+    });
+  }
+</script>
+
+</body>
+</html>
