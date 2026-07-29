@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Caja — Barbería Garage</title>
+<title>Caja — DEMO</title>
 <style>
   :root{
     --fondo:#121212;
@@ -1050,7 +1050,7 @@
 <!-- PANTALLA DE LOGIN -->
 <div id="pantallaLogin">
   <div class="cajaLogin">
-    <h1>Barbería <span>Garage</span></h1>
+    <h1>CAJA <span>DEMO</span></h1>
     <p>Panel de caja</p>
     <input type="password" id="inputPass" placeholder="Contraseña" autocomplete="off">
     <button id="btnEntrar">Entrar</button>
@@ -1064,7 +1064,7 @@
     <div class="headerContenido">
       <div class="filaHeader">
         <div class="tituloHeader">
-          <h2>Barbería <span>Garage</span></h2>
+          <h2>DEMO <span>CAJA</span></h2>
           <div id="fechaHeader"></div>
         </div>
         <div class="ladoDerecho">
@@ -2189,7 +2189,7 @@
   try{
     await getDocs(collection(db, "ajustes"));
     punto.classList.add("ok");
-    texto.textContent = "Firebase conectado";
+    texto.textContent = "conectado";
   } catch(err){
     mostrarError(err);
   }
