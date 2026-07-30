@@ -5143,8 +5143,23 @@
 
     let prod = 0;
     let comis = 0;
+    let numServicios = 0;   // servicios reales (corte, facial...), sin productos
+    let numProductos = 0;   // cantidad de productos vendidos
+    let valorProductos = 0; // producción en pesos de esos productos
     nomTicketsC.forEach(function(t){
-      if(t.barbero === num){ prod += t.monto; comis += comisionTicket(t); }
+      if(t.barbero !== num) return;
+      prod += t.monto;
+      comis += comisionTicket(t);
+      if(Array.isArray(t.items)){
+        t.items.forEach(function(it){
+          if(it && it.servicioId === "producto"){
+            numProductos += 1;
+            valorProductos += (it.monto || 0);
+          } else {
+            numServicios += 1;
+          }
+        });
+      }
     });
     let adel = 0;
     nomMovsC.forEach(function(m){
@@ -5174,6 +5189,8 @@
       '<div class="tituloSeccion"><span>Nómina de ' + esc(nombre) + '</span></div>' +
       '<div class="panelFilas">' +
         '<div class="filaPanel"><span class="etiquetaF">Producción de la semana</span><span class="valorF">' + formatoDinero(prod) + '</span></div>' +
+        '<div class="filaPanel"><span class="etiquetaF">Servicios realizados</span><span class="valorF">' + numServicios + '</span></div>' +
+        '<div class="filaPanel"><span class="etiquetaF">Productos vendidos</span><span class="valorF">' + numProductos + ' = ' + formatoDinero(valorProductos) + '</span></div>' +
         '<div class="filaPanel"><span class="etiquetaF">Cobros con tarjeta</span><span class="valorF azul">' + formatoDinero(tarj) + '</span></div>' +
         '<div class="filaPanel"><span class="etiquetaF">Comisiones por servicio</span><span class="valorF">' + formatoDinero(sub) + '</span></div>' +
         '<div class="filaPanel"><span class="etiquetaF">− Adelantos</span><span class="valorF rojo">− ' + formatoDinero(adel) + '</span></div>' +
@@ -5365,8 +5382,19 @@
     });
 
     let comis = 0;
+    let numProductos = 0;
+    let valorProductos = 0;
     nomTicketsC.forEach(function(t){
-      if(t.barbero === "recepcion") comis += comisionTicket(t);
+      if(t.barbero !== "recepcion") return;
+      comis += comisionTicket(t);
+      if(Array.isArray(t.items)){
+        t.items.forEach(function(it){
+          if(it && it.servicioId === "producto"){
+            numProductos += 1;
+            valorProductos += (it.monto || 0);
+          }
+        });
+      }
     });
 
     const sub = nomDias * TARIFA_RECEPCION;
@@ -5384,6 +5412,7 @@
       '</div>' +
       '<div class="panelFilas" style="margin-top:10px;">' +
         '<div class="filaPanel"><span class="etiquetaF">Días × ' + formatoDinero(TARIFA_RECEPCION) + '</span><span class="valorF">' + formatoDinero(sub) + '</span></div>' +
+        '<div class="filaPanel"><span class="etiquetaF">Productos vendidos</span><span class="valorF">' + numProductos + ' = ' + formatoDinero(valorProductos) + '</span></div>' +
         '<div class="filaPanel"><span class="etiquetaF">+ Comisión por venta de producto</span><span class="valorF verde">+ ' + formatoDinero(comis) + '</span></div>' +
         '<div class="filaPanel"><span class="etiquetaF">− Adelantos</span><span class="valorF rojo">− ' + formatoDinero(adel) + '</span></div>' +
         '<div class="filaPanel destacada"><span class="etiquetaF">Total a pagar</span><span class="valorF" style="color:' + (total < 0 ? '#e05c5c' : '#4caf50') + ';">' + formatoDinero(total) + '</span></div>' +
