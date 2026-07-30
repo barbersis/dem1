@@ -628,7 +628,6 @@
     <div class="tituloSeccion">Monto especial</div>
     <div class="chipsConcepto" id="chipsConcepto">
       <button class="chip" data-con="Producto">Producto</button>
-      <button class="chip" data-con="Pigmento">Pigmento</button>
       <button class="chip" data-con="Otro">Otro</button>
     </div>
     <input type="text" id="especialConcepto" placeholder="¿Qué servicio es?" autocomplete="off">
@@ -867,7 +866,7 @@
   }
 
   // servicioId/comision son opcionales: los conceptos "especiales"
-  // (Pigmento, Otro) no tienen comisión definida
+  // (Otro) no tiene comisión definida
   // todavía — quedan en null a propósito, NO se inventa un monto.
   function agregarItem(concepto, monto, servicioId, comision){
     itemsActuales.push({
@@ -954,7 +953,7 @@
   });
 
   // ============================================================
-  // MONTO ESPECIAL (Pigmento / Producto / Otro)
+  // MONTO ESPECIAL (Producto / Otro)
   // ============================================================
   const chipsConcepto    = document.getElementById("chipsConcepto");
   const especialConcepto = document.getElementById("especialConcepto");
@@ -981,7 +980,7 @@
     const monto = parseFloat(especialMonto.value);
 
     if(conceptoEspecial === null){
-      especialMsg.textContent = "Elige el concepto (Producto, Pigmento u Otro)";
+      especialMsg.textContent = "Elige el concepto (Producto u Otro)";
       return;
     }
     let concepto = conceptoEspecial;
@@ -999,7 +998,7 @@
 
     // Producto: el monto capturado es lo que paga el cliente (va a caja),
     // pero la comisión del barbero SIEMPRE es $20 fijos, sin importar el monto.
-    // Pigmento y Otro: sin comisión definida todavía (pendiente con Joss).
+    // Otro: sin comisión definida todavía (pendiente con Joss).
     const servicioId = conceptoEspecial === "Producto" ? "producto" : null;
     const comisionFija = conceptoEspecial === "Producto" ? 20 : null;
 
