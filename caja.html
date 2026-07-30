@@ -1679,10 +1679,11 @@
     <label>Monto ($)</label>
     <input type="number" id="inputMonto" placeholder="0" inputmode="numeric" min="0">
 
-    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-top:10px;font-weight:400;">
-      <input type="checkbox" id="chkProducto" style="width:18px;height:18px;cursor:pointer;">
-      Venta de producto (comisión fija $20)
-    </label>
+    <label>Tipo de cobro</label>
+    <div class="filaBarberos" id="filaTipoCobro">
+      <button class="btnBarbero activo" id="btnTipoServicio" data-tipo="servicio">Servicio</button>
+      <button class="btnBarbero" id="btnTipoProducto" data-tipo="producto">Producto ($20)</button>
+    </div>
 
     <div class="filaMetodo">
       <button class="btnMetodo efectivo" id="btnEfectivo">Efectivo</button>
@@ -2278,7 +2279,7 @@
       }).join("");
     }
 
-    filaBarberos.innerHTML = botones();
+    filaBarberos.innerHTML = botones() + '<button class="btnBarbero" data-num="R">Recepción</button>';
     tickFila.innerHTML = botones();
     movFila.innerHTML = botones() + '<button class="btnBarbero" data-num="R">R</button>';
     document.getElementById("emFilaQuien").innerHTML = botones() + '<button class="btnBarbero" data-num="R">R</button>';
@@ -2680,7 +2681,9 @@
   const btnTarjeta    = document.getElementById("btnTarjeta");
   const msgModal      = document.getElementById("msgModal");
 
-  const chkProducto   = document.getElementById("chkProducto");
+  const btnTipoServicio = document.getElementById("btnTipoServicio");
+  const btnTipoProducto = document.getElementById("btnTipoProducto");
+  let tipoCobro = "servicio"; // "servicio" o "producto"
   let barberoElegido = null;
   let guardando = false;
   let fechaDestinoCobro = null; // hoy, o el día elegido en Admin > Semana
@@ -2690,7 +2693,9 @@
     barberoElegido = null;
     inputConcepto.value = "";
     inputMonto.value = "";
-    chkProducto.checked = false;
+    tipoCobro = "servicio";
+    btnTipoServicio.classList.add("activo");
+    btnTipoProducto.classList.remove("activo");
     msgModal.textContent = "";
     filaBarberos.querySelectorAll(".btnBarbero").forEach(function(b){
       b.classList.remove("activo");
@@ -2713,8 +2718,16 @@
       b.classList.remove("activo");
     });
     btn.classList.add("activo");
-    barberoElegido = parseInt(btn.dataset.num, 10);
+    barberoElegido = btn.dataset.num === "R" ? "recepcion" : parseInt(btn.dataset.num, 10);
   });
+
+  function elegirTipoCobro(tipo){
+    tipoCobro = tipo;
+    btnTipoServicio.classList.toggle("activo", tipo === "servicio");
+    btnTipoProducto.classList.toggle("activo", tipo === "producto");
+  }
+  btnTipoServicio.addEventListener("click", function(){ elegirTipoCobro("servicio"); });
+  btnTipoProducto.addEventListener("click", function(){ elegirTipoCobro("producto"); });
 
   async function guardarCobroManual(metodo){
     if(guardando) return;
@@ -2722,7 +2735,7 @@
 
     if(barberoElegido === null){
       msgModal.style.color = "#e05c5c";
-      msgModal.textContent = "Elige un barbero";
+      msgModal.textContent = "Elige un barbero o Recepción";
       return;
     }
     if(isNaN(monto) || monto <= 0){
@@ -2738,7 +2751,7 @@
     msgModal.textContent = "Guardando...";
 
     try{
-      const esProducto = chkProducto.checked;
+      const esProducto = tipoCobro === "producto";
       const concepto = inputConcepto.value.trim() || (esProducto ? "Producto" : "Cobro manual");
       // Si es venta de producto, el ticket lleva un item con comisión
       // fija de $20 (para nómina). Si no, va sin items (comisión 0),
@@ -3628,7 +3641,8 @@
     });
 
     const adelRecep = adelPorQuien["recepcion"] || 0;
-    const nominaRecep = diasRecepcion * TARIFA_RECEPCION - adelRecep;
+    const comisRecep = comisPorBarbero["recepcion"] || 0;
+    const nominaRecep = diasRecepcion * TARIFA_RECEPCION - adelRecep + comisRecep;
     nominaTotal += nominaRecep;
 
     const pagoRecep = pagosSemanaActual["recepcion"];
@@ -4280,7 +4294,8 @@
     });
 
     const adelRecep = adelPorQuien["recepcion"] || 0;
-    const nominaRecep = diasRecepcionSel * TARIFA_RECEPCION - adelRecep;
+    const comisRecep = comisPorBarbero["recepcion"] || 0;
+    const nominaRecep = diasRecepcionSel * TARIFA_RECEPCION - adelRecep + comisRecep;
     nominaTotal += nominaRecep;
 
     const pagoRecep = pagosSel["recepcion"];
@@ -5349,8 +5364,13 @@
       if(m.tipo === "adelanto" && m.quien === "recepcion") adel += m.monto;
     });
 
+    let comis = 0;
+    nomTicketsC.forEach(function(t){
+      if(t.barbero === "recepcion") comis += comisionTicket(t);
+    });
+
     const sub = nomDias * TARIFA_RECEPCION;
-    const total = sub - adel;
+    const total = sub - adel + comis;
 
     nomContenido.innerHTML =
       '<div class="tituloSeccion"><span>Nómina de Recepción</span></div>' +
@@ -5364,6 +5384,7 @@
       '</div>' +
       '<div class="panelFilas" style="margin-top:10px;">' +
         '<div class="filaPanel"><span class="etiquetaF">Días × ' + formatoDinero(TARIFA_RECEPCION) + '</span><span class="valorF">' + formatoDinero(sub) + '</span></div>' +
+        '<div class="filaPanel"><span class="etiquetaF">+ Comisión por venta de producto</span><span class="valorF verde">+ ' + formatoDinero(comis) + '</span></div>' +
         '<div class="filaPanel"><span class="etiquetaF">− Adelantos</span><span class="valorF rojo">− ' + formatoDinero(adel) + '</span></div>' +
         '<div class="filaPanel destacada"><span class="etiquetaF">Total a pagar</span><span class="valorF" style="color:' + (total < 0 ? '#e05c5c' : '#4caf50') + ';">' + formatoDinero(total) + '</span></div>' +
       '</div>' +
@@ -5961,7 +5982,7 @@
           if(comisB === 0 && adelB === 0 && bonoB === 0 && multaB === 0) return;
           nomina += comisB - adelB + bonoB - multaB;
         });
-        nomina += s.dias * TARIFA_RECEPCION - (s.adelPor["recepcion"] || 0);
+        nomina += s.dias * TARIFA_RECEPCION - (s.adelPor["recepcion"] || 0) + (s.comisPor["recepcion"] || 0);
 
         const comision = s.tcvta * 0.04;
         const tarjetaNeta = s.tcvta - comision;
@@ -6137,7 +6158,7 @@
       clientesTotal += p.cli;
     });
 
-    const recepCosto = diasRecep * TARIFA_RECEPCION - adelRecep;
+    const recepCosto = diasRecep * TARIFA_RECEPCION - adelRecep + ((por["recepcion"] && por["recepcion"].comis) || 0);
     const utilidad = aportesTotal - recepCosto - gastosCaja - gastosNeg;
     const utilCliente = clientesTotal > 0 ? utilidad / clientesTotal : 0;
 
