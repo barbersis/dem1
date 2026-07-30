@@ -625,14 +625,10 @@
     <div class="tituloSeccion">Servicios</div>
     <div class="gridServicios" id="gridServicios"></div>
 
-    <div class="tituloSeccion">Paquetes</div>
-    <div class="gridServicios" id="gridPaquetes"></div>
-
     <div class="tituloSeccion">Monto especial</div>
     <div class="chipsConcepto" id="chipsConcepto">
+      <button class="chip" data-con="Producto">Producto</button>
       <button class="chip" data-con="Pigmento">Pigmento</button>
-      <button class="chip" data-con="Grecas">Grecas</button>
-      <button class="chip" data-con="Ondulado">Ondulado</button>
       <button class="chip" data-con="Otro">Otro</button>
     </div>
     <input type="text" id="especialConcepto" placeholder="¿Qué servicio es?" autocomplete="off">
@@ -797,88 +793,63 @@
   // ============================================================
   // CATÁLOGOS (regular y VIP)
   // ============================================================
-  const CATALOGO_REGULAR = {
-    servicios: [
-      { n: "Corte de cabello",  p: 150 },
-      { n: "Arreglo de barba",  p: 150 },
-      { n: "Retoque contorno",  p: 90 },
-      { n: "Facial exfoliante", p: 70 },
-      { n: "Carbón activado",   p: 60 },
-      { n: "Limpieza profunda", p: 120 },
-      { n: "Limpieza de cejas", p: 50 },
-      { n: "Limpieza oídos",    p: 100 },
-      { n: "Pigmentado barba",  p: 90,  desde: true },
-      { n: "Diseño grecas",     p: 30,  desde: true }
-    ],
-    paquetes: [
-      { n: "Paq. Barbón",     p: 250 },
-      { n: "Paq. Plus+",      p: 250 },
-      { n: "Paq. Papi Chulo", p: 330 },
-      { n: "Paq. VIP",        p: 300 },
-      { n: "Paq. Patrón",     p: 370 },
-      { n: "Paq. Rey",        p: 570 }
-    ]
-  };
-
-  const CATALOGO_VIP = {
-    servicios: [
-      { n: "Corte de cabello",  p: 200 },
-      { n: "Arreglo de barba",  p: 200 },
-      { n: "Facial exfoliante", p: 80 },
-      { n: "Carbón activado",   p: 70 },
-      { n: "Limpieza profunda", p: 150 },
-      { n: "Limpieza de cejas", p: 60 },
-      { n: "Limpieza oídos",    p: 130 },
-      { n: "Pigmentado barba",  p: 150, desde: true },
-      { n: "Diseño grecas",     p: 150, desde: true }
-    ],
-    paquetes: [
-      { n: "Paq. Barbón",     p: 330 },
-      { n: "Paq. Plus+",      p: 330 },
-      { n: "Paq. Papi Chulo", p: 410 },
-      { n: "Paq. VIP",        p: 370 },
-      { n: "Paq. Patrón",     p: 470 },
-      { n: "Paq. Rey",        p: 700 }
-    ]
-  };
+  // ============================================================
+  // CATÁLOGO DE JOSS — comisión fija por servicio (NO por %)
+  // ------------------------------------------------------------
+  // Cada servicio trae:
+  //   id       → clave estable para que nómina lea qué se hizo
+  //   n        → nombre visible
+  //   p        → precio que paga el cliente (va a la caja)
+  //   comision → { NombreBarbero: pesos fijos que gana ese barbero }
+  //              si el nombre de barberoActual no aparece aquí,
+  //              ese barbero no ve el botón (no ofrece el servicio)
+  // Sin VIP, sin paquetes — este cliente no los maneja.
+  // ============================================================
+  const CATALOGO_JOSS = [
+    { id:"corte",        n:"Corte",                          p:250, comision:{ Antony:80, Oliver:80, Homero:100, Joss:100 } },
+    { id:"ritual",       n:"Ritual de barba",                p:260, comision:{ Antony:80, Oliver:80, Homero:104, Joss:104 } },
+    { id:"barbaexpress", n:"Barba express",                  p:180, comision:{ Antony:70, Oliver:70, Homero:72,  Joss:72  } },
+    { id:"disenobarba",  n:"Diseño de barba",                p:120, comision:{ Antony:45, Oliver:45, Homero:48,  Joss:48  } },
+    { id:"cejanavaja",   n:"Depilación de ceja con navaja",  p:100, comision:{ Antony:40, Oliver:40, Homero:40,  Joss:40  } },
+    { id:"contornos",    n:"Limpieza de contornos",          p:100, comision:{ Antony:40, Oliver:40, Homero:40,  Joss:40  } },
+    { id:"facial",       n:"Facial",                         p:200, comision:{ Antony:80, Oliver:80, Homero:80,  Joss:80  } },
+    { id:"exfoliacion",  n:"Exfoliación",                    p:70,  comision:{ Antony:28, Oliver:28, Homero:28,  Joss:28  } },
+    // Exclusivos de Joss — solo él los ofrece:
+    { id:"tintebarba",   n:"Tinte de barba",                 p:200, comision:{ Joss:80  } },
+    { id:"cortedama",    n:"Corte de dama",                  p:300, comision:{ Joss:100 } },
+    { id:"cejahilo",     n:"Depilación de ceja con hilo",    p:200, comision:{ Joss:80  } }
+  ];
 
   const gridServicios = document.getElementById("gridServicios");
-  const gridPaquetes  = document.getElementById("gridPaquetes");
 
   function renderCatalogo(){
-    const cat = barberoActual.vip ? CATALOGO_VIP : CATALOGO_REGULAR;
+    // Solo se muestran los servicios que ESTE barbero de verdad ofrece
+    const disponibles = CATALOGO_JOSS.filter(function(s){
+      return s.comision[barberoActual.nombre] !== undefined;
+    });
 
-    function pintar(lista, contenedor){
-      contenedor.innerHTML = "";
-      lista.forEach(function(s){
-        const btn = document.createElement("button");
-        btn.className = "btnServicio";
+    gridServicios.innerHTML = "";
+    disponibles.forEach(function(s){
+      const btn = document.createElement("button");
+      btn.className = "btnServicio";
 
-        const nom = document.createElement("div");
-        nom.className = "nomServ";
-        nom.textContent = s.n;
+      const nom = document.createElement("div");
+      nom.className = "nomServ";
+      nom.textContent = s.n;
 
-        const precio = document.createElement("div");
-        precio.className = "precioServ";
-        precio.textContent = (s.desde ? "desde " : "") + formatoDinero(s.p);
+      const precio = document.createElement("div");
+      precio.className = "precioServ";
+      precio.textContent = formatoDinero(s.p);
 
-        btn.appendChild(nom);
-        btn.appendChild(precio);
+      btn.appendChild(nom);
+      btn.appendChild(precio);
 
-        btn.addEventListener("click", function(){
-          if(s.desde){
-            abrirModalMonto(s.n, s.p);
-          } else {
-            agregarItem(s.n, s.p);
-          }
-        });
-
-        contenedor.appendChild(btn);
+      btn.addEventListener("click", function(){
+        agregarItem(s.n, s.p, s.id, s.comision[barberoActual.nombre]);
       });
-    }
 
-    pintar(cat.servicios, gridServicios);
-    pintar(cat.paquetes, gridPaquetes);
+      gridServicios.appendChild(btn);
+    });
   }
 
   // ============================================================
@@ -888,15 +859,23 @@
   const itemsTicket = document.getElementById("itemsTicket");
   const btnEnviar   = document.getElementById("btnEnviar");
 
-  let itemsActuales = []; // [{concepto, monto}]
+  let itemsActuales = []; // [{concepto, monto, servicioId, comision}]
 
   function limpiarTicket(){
     itemsActuales = [];
     renderTicket();
   }
 
-  function agregarItem(concepto, monto){
-    itemsActuales.push({ concepto: concepto, monto: monto });
+  // servicioId/comision son opcionales: los conceptos "especiales"
+  // (Pigmento, Otro) no tienen comisión definida
+  // todavía — quedan en null a propósito, NO se inventa un monto.
+  function agregarItem(concepto, monto, servicioId, comision){
+    itemsActuales.push({
+      concepto: concepto,
+      monto: monto,
+      servicioId: servicioId || null,
+      comision: (comision === undefined ? null : comision)
+    });
     renderTicket();
   }
 
@@ -975,7 +954,7 @@
   });
 
   // ============================================================
-  // MONTO ESPECIAL (Pigmento / Grecas / Ondulado / Otro)
+  // MONTO ESPECIAL (Pigmento / Producto / Otro)
   // ============================================================
   const chipsConcepto    = document.getElementById("chipsConcepto");
   const especialConcepto = document.getElementById("especialConcepto");
@@ -1002,7 +981,7 @@
     const monto = parseFloat(especialMonto.value);
 
     if(conceptoEspecial === null){
-      especialMsg.textContent = "Elige el concepto (Pigmento, Grecas, Ondulado u Otro)";
+      especialMsg.textContent = "Elige el concepto (Producto, Pigmento u Otro)";
       return;
     }
     let concepto = conceptoEspecial;
@@ -1018,7 +997,13 @@
       return;
     }
 
-    agregarItem(concepto, monto);
+    // Producto: el monto capturado es lo que paga el cliente (va a caja),
+    // pero la comisión del barbero SIEMPRE es $20 fijos, sin importar el monto.
+    // Pigmento y Otro: sin comisión definida todavía (pendiente con Joss).
+    const servicioId = conceptoEspecial === "Producto" ? "producto" : null;
+    const comisionFija = conceptoEspecial === "Producto" ? 20 : null;
+
+    agregarItem(concepto, monto, servicioId, comisionFija);
 
     // Limpiar el formulario especial
     especialMsg.textContent = "";
@@ -1051,7 +1036,12 @@
     itemsActuales.forEach(function(i){
       total += i.monto;
       nombres.push(i.concepto);
-      items.push({ concepto: i.concepto, monto: i.monto });
+      items.push({
+        concepto: i.concepto,
+        monto: i.monto,
+        servicioId: i.servicioId,
+        comision: i.comision
+      });
     });
 
     try{
