@@ -1495,7 +1495,7 @@
               <span class="valorT1" id="rsValorT3">$0</span>
             </div>
 
-            <div style="color:var(--texto-suave);font-size:12px;margin-top:14px;text-align:center;">La nómina de semanas pasadas se calcula con los porcentajes actuales de cada barbero y la tarifa actual de Recepción. Bonos, multas, extras y días de Recepción sí son los guardados de esa semana.</div>
+            <div style="color:var(--texto-suave);font-size:12px;margin-top:14px;text-align:center;">La nómina de semanas pasadas se calcula con las comisiones por servicio guardadas en cada ticket y la tarifa actual de Recepción. Bonos, multas y días de Recepción sí son los guardados de esa semana.</div>
 
           </div>
 
@@ -1616,7 +1616,7 @@
 
           <div style="color:var(--texto-suave);font-size:12px;margin-top:14px;text-align:center;">La UD del barbero VIP incluye el 40% de sus extras. La columna Tarjeta muestra el total cobrado con tarjeta por cada uno. Los bonos, multas, extras y días de Recepción se asignan al mes en que inicia su semana.</div>
 
-          <div style="color:var(--texto-suave);font-size:12px;margin-top:8px;text-align:center;">Las gráficas muestran todas las semanas del año con datos. La nómina histórica usa los porcentajes actuales de cada barbero.</div>
+          <div style="color:var(--texto-suave);font-size:12px;margin-top:8px;text-align:center;">Las gráficas muestran todas las semanas del año con datos. La nómina histórica usa las comisiones por servicio de cada ticket.</div>
 
           <!-- ===== HISTORIAL DE CAMBIOS ===== -->
           <div style="display:flex;justify-content:flex-end;margin-top:18px;">
@@ -1678,6 +1678,11 @@
 
     <label>Monto ($)</label>
     <input type="number" id="inputMonto" placeholder="0" inputmode="numeric" min="0">
+
+    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-top:10px;font-weight:400;">
+      <input type="checkbox" id="chkProducto" style="width:18px;height:18px;cursor:pointer;">
+      Venta de producto (comisión fija $20)
+    </label>
 
     <div class="filaMetodo">
       <button class="btnMetodo efectivo" id="btnEfectivo">Efectivo</button>
@@ -2202,6 +2207,31 @@
     return "$" + redondeado.toLocaleString("es-MX");
   }
 
+  // ============================================================
+  // NÓMINA POR COMISIÓN FIJA POR SERVICIO (modelo Joss)
+  // ------------------------------------------------------------
+  // La nómina de este demo NO es "producción × porcentaje".
+  // Cada ticket trae un arreglo t.items = [{ concepto, monto,
+  // servicioId, comision }]. Lo que gana el barbero es la SUMA
+  // de las comisiones fijas de sus items, sin importar el precio
+  // que pagó el cliente.
+  //
+  //  - items con comision null (Pigmento, Otro, sin comisión
+  //    definida todavía) suman $0 a nómina, aunque sí aporten
+  //    al monto/producción de la caja.
+  //  - tickets viejos que no tengan items (cobros manuales
+  //    antiguos, o de antes de este cambio) devuelven 0 — no
+  //    rompen, solo no generan comisión.
+  // ============================================================
+  function comisionTicket(t){
+    if(!t || !Array.isArray(t.items)) return 0;
+    let total = 0;
+    t.items.forEach(function(it){
+      if(it && typeof it.comision === "number") total += it.comision;
+    });
+    return total;
+  }
+
   function formatoHora(ts){
     if(!ts) return "";
     const d = ts.toDate();
@@ -2650,6 +2680,7 @@
   const btnTarjeta    = document.getElementById("btnTarjeta");
   const msgModal      = document.getElementById("msgModal");
 
+  const chkProducto   = document.getElementById("chkProducto");
   let barberoElegido = null;
   let guardando = false;
   let fechaDestinoCobro = null; // hoy, o el día elegido en Admin > Semana
@@ -2659,6 +2690,7 @@
     barberoElegido = null;
     inputConcepto.value = "";
     inputMonto.value = "";
+    chkProducto.checked = false;
     msgModal.textContent = "";
     filaBarberos.querySelectorAll(".btnBarbero").forEach(function(b){
       b.classList.remove("activo");
@@ -2706,10 +2738,20 @@
     msgModal.textContent = "Guardando...";
 
     try{
+      const esProducto = chkProducto.checked;
+      const concepto = inputConcepto.value.trim() || (esProducto ? "Producto" : "Cobro manual");
+      // Si es venta de producto, el ticket lleva un item con comisión
+      // fija de $20 (para nómina). Si no, va sin items (comisión 0),
+      // como cualquier cobro manual normal.
+      const items = esProducto
+        ? [{ concepto: concepto, monto: monto, servicioId: "producto", comision: 20 }]
+        : [];
+
       await addDoc(collection(db, "tickets"), {
         barbero: barberoElegido,
-        concepto: inputConcepto.value.trim() || "Cobro manual",
+        concepto: concepto,
         monto: monto,
+        items: items,
         metodo: metodo,
         fecha: fechaDestinoCobro || fechaHoy(),
         origen: "manual",
@@ -3008,6 +3050,9 @@
                     ? pendienteAbierto.servicios.join(" + ")
                     : String(pendienteAbierto.servicios || "Ticket"),
         monto: monto,
+        // items con servicioId y comisión de cada servicio — es lo
+        // que la nómina necesita para sumar comisiones fijas.
+        items: Array.isArray(pendienteAbierto.items) ? pendienteAbierto.items : [],
         metodo: metodo,
         fecha: fechaHoy(),
         origen: "ticket",
@@ -3509,11 +3554,13 @@
 
     // ----- Nómina por barbero -----
     const activos = barberosActivos();
-    const prodPorBarbero = {};
+    const prodPorBarbero = {};   // producción (lo que cobró el cliente) — para mostrar
+    const comisPorBarbero = {};  // comisión fija ganada — es la base de la nómina
     const adelPorQuien = {};
 
     ticketsSemana.forEach(function(t){
-      prodPorBarbero[t.barbero] = (prodPorBarbero[t.barbero] || 0) + t.monto;
+      prodPorBarbero[t.barbero]  = (prodPorBarbero[t.barbero]  || 0) + t.monto;
+      comisPorBarbero[t.barbero] = (comisPorBarbero[t.barbero] || 0) + comisionTicket(t);
     });
     movsSemana.forEach(function(m){
       if(m.tipo === "adelanto"){
@@ -3545,8 +3592,9 @@
 
     activos.forEach(function(b){
       const prod = prodPorBarbero[b.num] || 0;
+      const comis = comisPorBarbero[b.num] || 0;
       const adel = adelPorQuien[b.num] || 0;
-      const nomina = prod * (b.porcentaje / 100) - adel
+      const nomina = comis - adel
                    + (bonosPor[b.num] || 0) - (multasPor[b.num] || 0);
       nominaTotal += nomina;
 
@@ -4162,10 +4210,12 @@
     // ----- Nómina por barbero -----
     const activos = barberosActivos();
     const prodPorBarbero = {};
+    const comisPorBarbero = {};
     const adelPorQuien = {};
 
     ticketsSel.forEach(function(t){
-      prodPorBarbero[t.barbero] = (prodPorBarbero[t.barbero] || 0) + t.monto;
+      prodPorBarbero[t.barbero]  = (prodPorBarbero[t.barbero]  || 0) + t.monto;
+      comisPorBarbero[t.barbero] = (comisPorBarbero[t.barbero] || 0) + comisionTicket(t);
     });
     movsSel.forEach(function(m){
       if(m.tipo === "adelanto"){
@@ -4194,8 +4244,9 @@
 
     activos.forEach(function(b){
       const prod = prodPorBarbero[b.num] || 0;
+      const comis = comisPorBarbero[b.num] || 0;
       const adel = adelPorQuien[b.num] || 0;
-      const nomina = prod * (b.porcentaje / 100) - adel
+      const nomina = comis - adel
                    + (bonosPor[b.num] || 0) - (multasPor[b.num] || 0);
       nominaTotal += nomina;
 
@@ -5076,8 +5127,9 @@
     }
 
     let prod = 0;
+    let comis = 0;
     nomTicketsC.forEach(function(t){
-      if(t.barbero === num) prod += t.monto;
+      if(t.barbero === num){ prod += t.monto; comis += comisionTicket(t); }
     });
     let adel = 0;
     nomMovsC.forEach(function(m){
@@ -5099,7 +5151,7 @@
       if(t.barbero === num && t.metodo === "tarjeta") tarj += t.monto;
     });
 
-    const sub = prod * (b.porcentaje / 100);
+    const sub = comis;  // la base de la nómina es la suma de comisiones fijas
     const total = sub - adel + bonos - multas;
     const nombre = b.nombre || ("Barbero " + b.num);
 
@@ -5108,8 +5160,7 @@
       '<div class="panelFilas">' +
         '<div class="filaPanel"><span class="etiquetaF">Producción de la semana</span><span class="valorF">' + formatoDinero(prod) + '</span></div>' +
         '<div class="filaPanel"><span class="etiquetaF">Cobros con tarjeta</span><span class="valorF azul">' + formatoDinero(tarj) + '</span></div>' +
-        '<div class="filaPanel"><span class="etiquetaF">Porcentaje</span><span class="valorF">' + b.porcentaje + '%</span></div>' +
-        '<div class="filaPanel"><span class="etiquetaF">Subtotal (producción × %)</span><span class="valorF">' + formatoDinero(sub) + '</span></div>' +
+        '<div class="filaPanel"><span class="etiquetaF">Comisiones por servicio</span><span class="valorF">' + formatoDinero(sub) + '</span></div>' +
         '<div class="filaPanel"><span class="etiquetaF">− Adelantos</span><span class="valorF rojo">− ' + formatoDinero(adel) + '</span></div>' +
         '<div class="filaPanel"><span class="etiquetaF">+ Bonos</span><span class="valorF verde">+ ' + formatoDinero(bonos) + '</span></div>' +
         '<div class="filaPanel"><span class="etiquetaF">− Multas</span><span class="valorF rojo">− ' + formatoDinero(multas) + '</span></div>' +
@@ -5117,26 +5168,14 @@
       '</div>' +
       '<div id="nomPagadoFila" style="display:flex;justify-content:flex-end;margin-top:10px;"></div>';
 
-    if(b.vip){
-      const totalConExtra = total + extra * 0.6;
-      html +=
-        '<div class="tituloSeccion"><span>Extra (fuera de horario)</span></div>' +
-        '<div class="panelFilas">' +
-          '<div class="filaPanel"><span class="etiquetaF">Extra total de la semana</span><span class="valorF">' + formatoDinero(extra) + '</span></div>' +
-          '<div class="filaPanel"><span class="etiquetaF">Tu parte (60%)</span><span class="valorF verde">+ ' + formatoDinero(extra * 0.6) + '</span></div>' +
-          '<div class="filaPanel"><span class="etiquetaF">Para BARBER (40%)</span><span class="valorF azul">' + formatoDinero(extra * 0.4) + '</span></div>' +
-          '<div class="filaPanel destacada"><span class="etiquetaF">Total nómina + 60% extra</span><span class="valorF" style="color:' + (totalConExtra < 0 ? '#e05c5c' : '#4caf50') + ';">' + formatoDinero(totalConExtra) + '</span></div>' +
-        '</div>';
-    }
-
     html +=
-      '<div class="filaAgregarDia" id="nomBtnsFila" style="margin-top:14px;' + (b.vip ? 'grid-template-columns:1fr 1fr 1fr;' : '') + '"></div>' +
+      '<div class="filaAgregarDia" id="nomBtnsFila" style="margin-top:14px;"></div>' +
       '<div id="nomItemsLista" style="display:flex;flex-direction:column;gap:8px;"></div>';
 
     nomContenido.innerHTML = html;
 
-    // Botón PAGADO de este barbero (usa el total con extra si es VIP)
-    const montoPago = b.vip ? total + extra * 0.6 : total;
+    // Botón PAGADO de este barbero
+    const montoPago = total;
     document.getElementById("nomPagadoFila")
       .appendChild(crearBotonPagado(nomFechas[0], num, nombre, montoPago, nomPagosC[String(num)]));
 
@@ -5827,7 +5866,7 @@
           semanas[lunes] = {
             prod: 0, tcvta: 0, clientes: 0,
             gastosCaja: 0, adelantos: 0,
-            prodPor: {}, adelPor: {},
+            prodPor: {}, comisPor: {}, adelPor: {},
             bonosPor: {}, multasPor: {}, extra: 0,
             dias: 0, gastosNeg: 0
           };
@@ -5846,7 +5885,8 @@
         s.prod += t.monto;
         s.clientes += 1;
         if(t.metodo === "tarjeta") s.tcvta += t.monto;
-        s.prodPor[t.barbero] = (s.prodPor[t.barbero] || 0) + t.monto;
+        s.prodPor[t.barbero]  = (s.prodPor[t.barbero]  || 0) + t.monto;
+        s.comisPor[t.barbero] = (s.comisPor[t.barbero] || 0) + comisionTicket(t);
       });
 
       grMovs.forEach(function(m){
@@ -5911,15 +5951,15 @@
         // Efectivo real en caja (para el restante final, misma lógica que Resumen)
         const efectivoCaja = s.prod - s.tcvta - s.gastosCaja - s.adelantos;
 
-        // Nómina de la semana (con los porcentajes actuales)
+        // Nómina de la semana (suma de comisiones por servicio)
         let nomina = 0;
         barberosCache.forEach(function(b){
-          const prodB = s.prodPor[b.num] || 0;
+          const comisB = s.comisPor[b.num] || 0;
           const adelB = s.adelPor[b.num] || 0;
           const bonoB = s.bonosPor[b.num] || 0;
           const multaB = s.multasPor[b.num] || 0;
-          if(prodB === 0 && adelB === 0 && bonoB === 0 && multaB === 0) return;
-          nomina += prodB * (b.porcentaje / 100) - adelB + bonoB - multaB;
+          if(comisB === 0 && adelB === 0 && bonoB === 0 && multaB === 0) return;
+          nomina += comisB - adelB + bonoB - multaB;
         });
         nomina += s.dias * TARIFA_RECEPCION - (s.adelPor["recepcion"] || 0);
 
@@ -6034,7 +6074,7 @@
     // Acumuladores por barbero
     const por = {};
     function pb(num){
-      if(!por[num]) por[num] = { prod: 0, cli: 0, adel: 0, bono: 0, multa: 0, extra: 0, tarj: 0 };
+      if(!por[num]) por[num] = { prod: 0, comis: 0, cli: 0, adel: 0, bono: 0, multa: 0, extra: 0, tarj: 0 };
       return por[num];
     }
 
@@ -6042,6 +6082,7 @@
       if(!delMes(t.fecha)) return;
       const p = pb(t.barbero);
       p.prod += t.monto;
+      p.comis += comisionTicket(t);
       p.cli += 1;
       if(t.metodo === "tarjeta") p.tarj += t.monto;
     });
@@ -6083,7 +6124,7 @@
       if(!p) return;
       if(p.prod === 0 && p.cli === 0 && p.adel === 0 && p.bono === 0 && p.multa === 0 && p.extra === 0) return;
 
-      const nomina = p.prod * (b.porcentaje / 100) - p.adel + p.bono - p.multa;
+      const nomina = p.comis - p.adel + p.bono - p.multa;
       const aporte = p.prod - nomina + p.extra * 0.4; // UD del barbero
       const ticket = p.cli > 0 ? p.prod / p.cli : 0;
 
