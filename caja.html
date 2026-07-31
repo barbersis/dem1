@@ -937,6 +937,63 @@
   .btnMetodo:disabled{ opacity:0.5; cursor:default; }
   .btnMetodo.efectivo{ background:#2e5c33; color:#d9f2db; }
   .btnMetodo.tarjeta{ background:#2b4a6b; color:#dbeafd; }
+  .btnMetodo.transferencia{ background:#4a3b6b; color:#e0dbfd; }
+  /* Fila de método con 3 columnas (Efectivo / Transferencia / Tarjeta) */
+  .filaMetodo.tres{ grid-template-columns:1fr 1fr 1fr; }
+  .btnMetodo.chico{ padding:13px 0; font-size:14px; }
+  /* Estado seleccionado del método */
+  .btnMetodo.sel{ outline:3px solid #e8a33d; outline-offset:-1px; }
+  /* Sub-botones Tarjeta 1 / Tarjeta 2, se despliegan al elegir Tarjeta */
+  .filaSubTarjeta{
+    display:none;
+    grid-template-columns:1fr 1fr;
+    gap:10px;
+    margin-top:10px;
+  }
+  .filaSubTarjeta.abierta{ display:grid; }
+  .btnSubTarjeta{
+    padding:13px 0;
+    font-size:14px;
+    font-weight:700;
+    border:none;
+    border-radius:12px;
+    cursor:pointer;
+    background:#2b4a6b;
+    color:#dbeafd;
+  }
+  .btnSubTarjeta.sel{ outline:3px solid #e8a33d; outline-offset:-1px; }
+  .btnSubTarjeta:disabled{ opacity:0.5; cursor:default; }
+  /* Botón propina + input, aparecen solo en métodos digitales */
+  .bloquePropina{
+    display:none;
+    margin-top:12px;
+    gap:8px;
+    grid-template-columns:auto 1fr;
+    align-items:center;
+  }
+  .bloquePropina.visible{ display:grid; }
+  .btnPropina{
+    padding:11px 14px;
+    font-size:14px;
+    font-weight:700;
+    border:none;
+    border-radius:10px;
+    background:#5c4a2e;
+    color:#f2e6d9;
+    cursor:pointer;
+    white-space:nowrap;
+  }
+  .btnPropina.activo{ background:#e8a33d; color:#1a1a1a; }
+  .inputPropina{
+    padding:11px 12px;
+    font-size:15px;
+    border-radius:10px;
+    border:1px solid var(--borde);
+    background:var(--fondo);
+    color:var(--texto);
+    width:100%;
+  }
+  .inputPropina:focus{ outline:none; border-color:var(--ambar); }
   .btnGuardarModal{
     width:100%;
     margin-top:18px;
@@ -1677,10 +1734,20 @@
       <button class="btnBarbero" id="btnTipoBebida" data-tipo="bebida">Bebidas</button>
     </div>
 
-    <div class="filaMetodo">
-      <button class="btnMetodo efectivo" id="btnEfectivo">Efectivo</button>
-      <button class="btnMetodo tarjeta" id="btnTarjeta">Tarjeta</button>
+    <div class="filaMetodo tres">
+      <button class="btnMetodo efectivo chico" id="btnEfectivo">Efectivo</button>
+      <button class="btnMetodo transferencia chico" id="btnTransfer">Transferencia</button>
+      <button class="btnMetodo tarjeta chico" id="btnTarjeta">Tarjeta</button>
     </div>
+    <div class="filaSubTarjeta" id="cmSubTarjeta">
+      <button class="btnSubTarjeta" id="btnTarjeta1">Tarjeta 1</button>
+      <button class="btnSubTarjeta" id="btnTarjeta2">Tarjeta 2</button>
+    </div>
+    <div class="bloquePropina" id="cmBloquePropina">
+      <button class="btnPropina" id="cmBtnPropina">+ Propina</button>
+      <input type="number" class="inputPropina" id="cmPropina" placeholder="Monto propina" inputmode="numeric" min="0">
+    </div>
+    <button class="btnGuardarModal" id="cmCobrar" disabled>Elige un método</button>
     <div class="msgModal" id="msgModal"></div>
     <button class="btnCancelarModal" id="btnCancelarCobro">Cancelar</button>
   </div>
@@ -1702,10 +1769,20 @@
       <button id="pendModificar" style="padding:10px 12px;font-size:13px;font-weight:700;border:none;border-radius:10px;background:#2c2c2c;color:#e8a33d;cursor:pointer;">Modificar 🔒</button>
     </div>
 
-    <div class="filaMetodo">
-      <button class="btnMetodo efectivo" id="pendEfectivo">Efectivo</button>
-      <button class="btnMetodo tarjeta" id="pendTarjeta">Tarjeta</button>
+    <div class="filaMetodo tres">
+      <button class="btnMetodo efectivo chico" id="pendEfectivo">Efectivo</button>
+      <button class="btnMetodo transferencia chico" id="pendTransfer">Transferencia</button>
+      <button class="btnMetodo tarjeta chico" id="pendTarjeta">Tarjeta</button>
     </div>
+    <div class="filaSubTarjeta" id="pendSubTarjeta">
+      <button class="btnSubTarjeta" id="pendTarjeta1">Tarjeta 1</button>
+      <button class="btnSubTarjeta" id="pendTarjeta2">Tarjeta 2</button>
+    </div>
+    <div class="bloquePropina" id="pendBloquePropina">
+      <button class="btnPropina" id="pendBtnPropina">+ Propina</button>
+      <input type="number" class="inputPropina" id="pendPropina" placeholder="Monto propina" inputmode="numeric" min="0">
+    </div>
+    <button class="btnGuardarModal" id="pendCobrar" disabled>Elige un método</button>
     <div class="msgModal" id="pendMsg"></div>
     <button class="btnDescartar" id="pendDescartar">Descartar ticket</button>
     <button class="btnCancelarModal" id="pendCancelar">Cancelar</button>
@@ -1855,9 +1932,16 @@
     <input type="number" id="tickMonto" inputmode="numeric" min="0">
 
     <label>Método de pago</label>
-    <div class="filaToggles">
+    <div class="filaToggles" style="flex-wrap:wrap;">
       <button class="btnToggle" id="tickEfectivo">Efectivo</button>
-      <button class="btnToggle" id="tickTarjeta">Tarjeta</button>
+      <button class="btnToggle" id="tickTransfer">Transferencia</button>
+      <button class="btnToggle" id="tickTarjeta1">Tarjeta 1</button>
+      <button class="btnToggle" id="tickTarjeta2">Tarjeta 2</button>
+    </div>
+
+    <div id="tickBloquePropina" style="margin-top:12px;">
+      <label>Propina (solo pagos digitales)</label>
+      <input type="number" id="tickPropina" inputmode="numeric" min="0" placeholder="0">
     </div>
 
     <button class="btnGuardarModal" id="tickGuardar">Guardar cambios</button>
@@ -2219,6 +2303,42 @@
     return total;
   }
 
+  // ----- Métodos de pago digitales y propinas -----
+  // Un cobro es "digital" (va al total de tarjeta) si su método es
+  // tarjeta1, tarjeta2, transferencia, o el viejo "tarjeta" (tickets
+  // cobrados antes de este cambio, que se agrupan como tarjeta genérica).
+  function esMetodoDigital(metodo){
+    return metodo === "tarjeta1" || metodo === "tarjeta2" ||
+           metodo === "transferencia" || metodo === "tarjeta";
+  }
+  // Propina de un ticket (0 si no tiene). Siempre va montada en un pago digital.
+  function propinaTicket(t){
+    return (t && typeof t.propina === "number" && t.propina > 0) ? t.propina : 0;
+  }
+  // Lo que entra por tarjeta/digital por ESE ticket = monto del servicio + propina.
+  // El monto es la producción (servicio); la propina viaja aparte pero se cobra
+  // en la misma pasada digital, así que ambos suman al total de tarjeta.
+  function totalDigitalTicket(t){
+    if(!t || !esMetodoDigital(t.metodo)) return 0;
+    return (t.monto || 0) + propinaTicket(t);
+  }
+  // Etiqueta corta legible del método, para las listas de tickets.
+  function etiquetaMetodo(metodo){
+    if(metodo === "efectivo") return "Efectivo";
+    if(metodo === "transferencia") return "Transferencia";
+    if(metodo === "tarjeta1") return "Tarjeta 1";
+    if(metodo === "tarjeta2") return "Tarjeta 2";
+    if(metodo === "tarjeta") return "Tarjeta"; // tickets viejos
+    return metodo || "";
+  }
+  // Clase CSS para el punto de color del método (reusa efectivo/tarjeta;
+  // transferencia tiene su propio color).
+  function claseMetodo(metodo){
+    if(metodo === "efectivo") return "efectivo";
+    if(metodo === "transferencia") return "transferencia";
+    return "tarjeta"; // tarjeta1, tarjeta2 y el viejo "tarjeta"
+  }
+
   function formatoHora(ts){
     if(!ts) return "";
     const d = ts.toDate();
@@ -2435,16 +2555,27 @@
   const cardVentaBebidas  = document.getElementById("cardVentaBebidas");
 
   let totProduccion = 0;
-  let totTarjeta    = 0;
+  let totTarjeta    = 0;   // total digital a MOSTRAR = producción-tarjeta + propinas
+  let totTarjetaProd = 0;  // solo producción cobrada por medios digitales (sin propina) — para el efectivo
   let totGastos     = 0;
   let totAdelantos  = 0;
   let totClientes   = 0;
   let totVentaProducto = 0;
   let totVentaBebidas  = 0;
+  // Desglose por método digital: cada uno guarda { prod, prop } para poder
+  // mostrar "Tarjeta 1: 250 (200 servicio + 50 prop)"
+  let desgloseDigital = {
+    tarjeta1:      { prod:0, prop:0 },
+    tarjeta2:      { prod:0, prop:0 },
+    transferencia: { prod:0, prop:0 },
+    tarjeta:       { prod:0, prop:0 }  // tickets viejos genéricos
+  };
 
   function actualizarCards(){
-    const comision = totTarjeta * 0.04;
-    const efectivo = totProduccion - totTarjeta - totGastos - totAdelantos;
+    // El efectivo real de caja resta SOLO la producción cobrada por medios
+    // digitales (no la propina: la propina entró por tarjeta pero se maneja
+    // aparte con un gasto manual, no es dinero de la caja de servicios).
+    const efectivo = totProduccion - totTarjetaProd - totGastos - totAdelantos;
 
     cardProduccion.textContent = formatoDinero(totProduccion);
     cardEfectivo.textContent   = formatoDinero(efectivo);
@@ -2454,7 +2585,27 @@
     cardClientes.textContent   = totClientes;
     if(cardVentaProducto) cardVentaProducto.textContent = formatoDinero(totVentaProducto);
     if(cardVentaBebidas)  cardVentaBebidas.textContent  = formatoDinero(totVentaBebidas);
-    cardComision.textContent   = "Comisión tarjeta 4% (informativa): " + formatoDinero(comision);
+
+    // Desglose de tarjeta por método, marcando la propina de cada uno.
+    if(cardComision){
+      const d = desgloseDigital;
+      const linea = function(nombre, o){
+        const tot = o.prod + o.prop;
+        if(tot === 0) return "";
+        let txt = nombre + ": " + formatoDinero(tot);
+        if(o.prop > 0) txt += " (" + formatoDinero(o.prod) + " serv. + " + formatoDinero(o.prop) + " prop.)";
+        return txt;
+      };
+      const partes = [
+        linea("Tarjeta 1", d.tarjeta1),
+        linea("Tarjeta 2", d.tarjeta2),
+        linea("Transferencia", d.transferencia),
+        linea("Tarjeta (previo)", d.tarjeta)
+      ].filter(function(s){ return s !== ""; });
+      cardComision.innerHTML = partes.length
+        ? partes.join(" &nbsp;·&nbsp; ")
+        : "Sin cobros con tarjeta hoy";
+    }
 
     cardEfectivo.classList.toggle("rojo", efectivo < 0);
     cardEfectivo.classList.toggle("verde", efectivo >= 0);
@@ -2527,7 +2678,7 @@
           const sub = document.createElement("div");
           sub.className = "subItem";
           const puntoM = document.createElement("span");
-          puntoM.className = "puntoMetodo " + c.metodo;
+          puntoM.className = "puntoMetodo " + claseMetodo(c.metodo);
           const horaT = document.createElement("span");
           horaT.textContent = formatoHora(c.creado);
           sub.appendChild(puntoM);
@@ -2670,8 +2821,19 @@
   const inputConcepto = document.getElementById("inputConcepto");
   const inputMonto    = document.getElementById("inputMonto");
   const btnEfectivo   = document.getElementById("btnEfectivo");
+  const btnTransfer   = document.getElementById("btnTransfer");
   const btnTarjeta    = document.getElementById("btnTarjeta");
+  const cmSubTarjeta  = document.getElementById("cmSubTarjeta");
+  const btnTarjeta1   = document.getElementById("btnTarjeta1");
+  const btnTarjeta2   = document.getElementById("btnTarjeta2");
+  const cmBloquePropina = document.getElementById("cmBloquePropina");
+  const cmBtnPropina  = document.getElementById("cmBtnPropina");
+  const cmPropina     = document.getElementById("cmPropina");
+  const cmCobrar      = document.getElementById("cmCobrar");
   const msgModal      = document.getElementById("msgModal");
+
+  // Estado del método elegido en el modal de cobro manual.
+  let cmMetodoSel = null;
 
   const btnTipoServicio = document.getElementById("btnTipoServicio");
   const btnTipoProducto = document.getElementById("btnTipoProducto");
@@ -2694,7 +2856,35 @@
     filaBarberos.querySelectorAll(".btnBarbero").forEach(function(b){
       b.classList.remove("activo");
     });
+    // Resetear método y propina
+    cmMetodoSel = null;
+    cmPropina.value = "";
+    cmBtnPropina.classList.remove("activo");
+    cmSubTarjeta.classList.remove("abierta");
+    cmBloquePropina.classList.remove("visible");
+    pintarMetodoCM();
     modalCobro.classList.add("abierto");
+  }
+
+  function pintarMetodoCM(){
+    const esTarjeta = (cmMetodoSel === "tarjeta1" || cmMetodoSel === "tarjeta2");
+    const esDigital = esTarjeta || cmMetodoSel === "transferencia";
+
+    btnEfectivo.classList.toggle("sel", cmMetodoSel === "efectivo");
+    btnTransfer.classList.toggle("sel", cmMetodoSel === "transferencia");
+    btnTarjeta.classList.toggle("sel", cmSubTarjeta.classList.contains("abierta"));
+    btnTarjeta1.classList.toggle("sel", cmMetodoSel === "tarjeta1");
+    btnTarjeta2.classList.toggle("sel", cmMetodoSel === "tarjeta2");
+
+    cmBloquePropina.classList.toggle("visible", esDigital);
+    if(!esDigital){
+      cmPropina.value = "";
+      cmBtnPropina.classList.remove("activo");
+    }
+
+    const listo = (cmMetodoSel === "efectivo" || esDigital);
+    cmCobrar.disabled = !listo;
+    cmCobrar.textContent = listo ? "Cobrar" : "Elige un método";
   }
 
   btnCobro.addEventListener("click", function(){
@@ -2725,8 +2915,8 @@
   btnTipoProducto.addEventListener("click", function(){ elegirTipoCobro("producto"); });
   btnTipoBebida.addEventListener("click", function(){ elegirTipoCobro("bebida"); });
 
-  async function guardarCobroManual(metodo){
-    if(guardando) return;
+  async function guardarCobroManual(){
+    if(guardando || !cmMetodoSel) return;
     const monto = parseFloat(inputMonto.value);
 
     const esBebida = tipoCobro === "bebida";
@@ -2744,9 +2934,19 @@
       return;
     }
 
+    const metodo = cmMetodoSel;
+    const esDigital = (metodo === "tarjeta1" || metodo === "tarjeta2" || metodo === "transferencia");
+    let propina = 0;
+    if(esDigital){
+      const p = parseFloat(cmPropina.value);
+      propina = (isNaN(p) || p < 0) ? 0 : p;
+    }
+
     guardando = true;
     btnEfectivo.disabled = true;
+    btnTransfer.disabled = true;
     btnTarjeta.disabled = true;
+    cmCobrar.disabled = true;
     msgModal.style.color = "#9a9a9a";
     msgModal.textContent = "Guardando...";
 
@@ -2777,6 +2977,7 @@
         monto: monto,
         items: items,
         metodo: metodo,
+        propina: propina, // propina montada sobre el pago digital (0 en efectivo)
         fecha: fechaDestinoCobro || fechaHoy(),
         origen: esBebida ? "bebida" : "manual",
         creado: serverTimestamp()
@@ -2789,11 +2990,53 @@
 
     guardando = false;
     btnEfectivo.disabled = false;
+    btnTransfer.disabled = false;
     btnTarjeta.disabled = false;
+    cmCobrar.disabled = false;
   }
 
-  btnEfectivo.addEventListener("click", function(){ guardarCobroManual("efectivo"); });
-  btnTarjeta.addEventListener("click", function(){ guardarCobroManual("tarjeta"); });
+  // Selección de método en el modal de cobro manual (mismo patrón que el modal pendiente)
+  btnEfectivo.addEventListener("click", function(){
+    if(guardando) return;
+    cmMetodoSel = "efectivo";
+    cmSubTarjeta.classList.remove("abierta");
+    pintarMetodoCM();
+  });
+  btnTransfer.addEventListener("click", function(){
+    if(guardando) return;
+    cmMetodoSel = "transferencia";
+    cmSubTarjeta.classList.remove("abierta");
+    pintarMetodoCM();
+  });
+  btnTarjeta.addEventListener("click", function(){
+    if(guardando) return;
+    const abierta = cmSubTarjeta.classList.toggle("abierta");
+    if(abierta){
+      if(cmMetodoSel !== "tarjeta1" && cmMetodoSel !== "tarjeta2") cmMetodoSel = null;
+    } else {
+      if(cmMetodoSel === "tarjeta1" || cmMetodoSel === "tarjeta2") cmMetodoSel = null;
+    }
+    pintarMetodoCM();
+  });
+  btnTarjeta1.addEventListener("click", function(){
+    if(guardando) return;
+    cmMetodoSel = "tarjeta1";
+    pintarMetodoCM();
+  });
+  btnTarjeta2.addEventListener("click", function(){
+    if(guardando) return;
+    cmMetodoSel = "tarjeta2";
+    pintarMetodoCM();
+  });
+  cmBtnPropina.addEventListener("click", function(){
+    cmBtnPropina.classList.toggle("activo");
+    if(cmBtnPropina.classList.contains("activo")){
+      cmPropina.focus();
+    } else {
+      cmPropina.value = "";
+    }
+  });
+  cmCobrar.addEventListener("click", guardarCobroManual);
 
   // ============================================================
   // GASTOS Y ADELANTOS
@@ -2992,10 +3235,22 @@
   const pendServicios  = document.getElementById("pendServicios");
   const pendMonto      = document.getElementById("pendMonto");
   const pendEfectivo   = document.getElementById("pendEfectivo");
+  const pendTransfer   = document.getElementById("pendTransfer");
   const pendTarjeta    = document.getElementById("pendTarjeta");
+  const pendSubTarjeta = document.getElementById("pendSubTarjeta");
+  const pendTarjeta1   = document.getElementById("pendTarjeta1");
+  const pendTarjeta2   = document.getElementById("pendTarjeta2");
+  const pendBloquePropina = document.getElementById("pendBloquePropina");
+  const pendBtnPropina = document.getElementById("pendBtnPropina");
+  const pendPropina    = document.getElementById("pendPropina");
+  const pendCobrar     = document.getElementById("pendCobrar");
   const pendDescartar  = document.getElementById("pendDescartar");
   const pendCancelar   = document.getElementById("pendCancelar");
   const pendMsg        = document.getElementById("pendMsg");
+
+  // Estado del método elegido en el modal pendiente.
+  // Valores finales: "efectivo" | "transferencia" | "tarjeta1" | "tarjeta2"
+  let pendMetodoSel = null;
 
   const pendModificar = document.getElementById("pendModificar");
 
@@ -3020,8 +3275,43 @@
     pendMsg.textContent = "";
     pendDescartar.textContent = "Descartar ticket";
     pendEfectivo.disabled = false;
+    pendTransfer.disabled = false;
     pendTarjeta.disabled = false;
+    // Resetear la selección de método y la propina
+    pendMetodoSel = null;
+    pendPropina.value = "";
+    pendBtnPropina.classList.remove("activo");
+    pendSubTarjeta.classList.remove("abierta");
+    pendBloquePropina.classList.remove("visible");
+    pintarMetodoPend();
     modalPendiente.classList.add("abierto");
+  }
+
+  // Pinta qué botón de método está seleccionado y muestra/oculta
+  // la sub-fila de tarjeta y el bloque de propina según corresponda.
+  function pintarMetodoPend(){
+    const esTarjeta = (pendMetodoSel === "tarjeta1" || pendMetodoSel === "tarjeta2");
+    const esDigital = esTarjeta || pendMetodoSel === "transferencia";
+
+    pendEfectivo.classList.toggle("sel", pendMetodoSel === "efectivo");
+    pendTransfer.classList.toggle("sel", pendMetodoSel === "transferencia");
+    // El botón "Tarjeta" queda marcado mientras la sub-fila esté abierta
+    pendTarjeta.classList.toggle("sel", pendSubTarjeta.classList.contains("abierta"));
+    pendTarjeta1.classList.toggle("sel", pendMetodoSel === "tarjeta1");
+    pendTarjeta2.classList.toggle("sel", pendMetodoSel === "tarjeta2");
+
+    // La propina solo aparece en métodos digitales; en efectivo se oculta y se limpia
+    pendBloquePropina.classList.toggle("visible", esDigital);
+    if(!esDigital){
+      pendPropina.value = "";
+      pendBtnPropina.classList.remove("activo");
+    }
+
+    // Habilitar el botón Cobrar solo cuando ya hay un método final elegido
+    // (efectivo, transferencia, tarjeta1 o tarjeta2 — no basta con "Tarjeta")
+    const listo = (pendMetodoSel === "efectivo" || esDigital);
+    pendCobrar.disabled = !listo;
+    pendCobrar.textContent = listo ? "Cobrar" : "Elige un método";
   }
 
   // Modificar el monto requiere la contraseña de admin
@@ -3048,8 +3338,8 @@
 
   pendCancelar.addEventListener("click", cerrarModalPendiente);
 
-  async function cobrarPendiente(metodo){
-    if(procesando || !pendienteAbierto) return;
+  async function cobrarPendiente(){
+    if(procesando || !pendienteAbierto || !pendMetodoSel) return;
 
     const monto = parseFloat(pendMonto.value);
     if(isNaN(monto) || monto <= 0){
@@ -3058,9 +3348,20 @@
       return;
     }
 
+    const metodo = pendMetodoSel;
+    const esDigital = (metodo === "tarjeta1" || metodo === "tarjeta2" || metodo === "transferencia");
+    // La propina solo aplica en métodos digitales; en efectivo se ignora
+    let propina = 0;
+    if(esDigital){
+      const p = parseFloat(pendPropina.value);
+      propina = (isNaN(p) || p < 0) ? 0 : p;
+    }
+
     procesando = true;
     pendEfectivo.disabled = true;
+    pendTransfer.disabled = true;
     pendTarjeta.disabled = true;
+    pendCobrar.disabled = true;
     pendMsg.style.color = "#9a9a9a";
     pendMsg.textContent = "Procesando...";
 
@@ -3078,6 +3379,7 @@
         // que la nómina necesita para sumar comisiones fijas.
         items: Array.isArray(pendienteAbierto.items) ? pendienteAbierto.items : [],
         metodo: metodo,
+        propina: propina, // propina montada sobre el pago digital (0 en efectivo)
         fecha: fechaHoy(),
         origen: "ticket",
         creado: serverTimestamp()
@@ -3098,12 +3400,57 @@
       pendMsg.textContent = "Error: " + err.message;
       procesando = false;
       pendEfectivo.disabled = false;
+      pendTransfer.disabled = false;
       pendTarjeta.disabled = false;
+      pendCobrar.disabled = false;
     }
   }
 
-  pendEfectivo.addEventListener("click", function(){ cobrarPendiente("efectivo"); });
-  pendTarjeta.addEventListener("click", function(){ cobrarPendiente("tarjeta"); });
+  // Selección de método: efectivo y transferencia son finales;
+  // "Tarjeta" solo despliega la sub-fila para elegir Tarjeta 1 o 2.
+  pendEfectivo.addEventListener("click", function(){
+    if(procesando) return;
+    pendMetodoSel = "efectivo";
+    pendSubTarjeta.classList.remove("abierta");
+    pintarMetodoPend();
+  });
+  pendTransfer.addEventListener("click", function(){
+    if(procesando) return;
+    pendMetodoSel = "transferencia";
+    pendSubTarjeta.classList.remove("abierta");
+    pintarMetodoPend();
+  });
+  pendTarjeta.addEventListener("click", function(){
+    if(procesando) return;
+    // Alternar la sub-fila; al abrirla, aún no hay método final hasta elegir T1/T2
+    const abierta = pendSubTarjeta.classList.toggle("abierta");
+    if(abierta){
+      if(pendMetodoSel !== "tarjeta1" && pendMetodoSel !== "tarjeta2") pendMetodoSel = null;
+    } else {
+      if(pendMetodoSel === "tarjeta1" || pendMetodoSel === "tarjeta2") pendMetodoSel = null;
+    }
+    pintarMetodoPend();
+  });
+  pendTarjeta1.addEventListener("click", function(){
+    if(procesando) return;
+    pendMetodoSel = "tarjeta1";
+    pintarMetodoPend();
+  });
+  pendTarjeta2.addEventListener("click", function(){
+    if(procesando) return;
+    pendMetodoSel = "tarjeta2";
+    pintarMetodoPend();
+  });
+  // Botón propina: enfoca el input (el monto es manual)
+  pendBtnPropina.addEventListener("click", function(){
+    pendBtnPropina.classList.toggle("activo");
+    if(pendBtnPropina.classList.contains("activo")){
+      pendPropina.focus();
+    } else {
+      pendPropina.value = "";
+    }
+  });
+  pendCobrar.addEventListener("click", cobrarPendiente);
 
   async function ejecutarDescarte(){
     if(!confirmandoDescarte){
@@ -3226,12 +3573,28 @@
 
     totProduccion = 0;
     totTarjeta = 0;
+    totTarjetaProd = 0;
     totClientes = cobros.length;
     totVentaProducto = 0;
     totVentaBebidas = 0;
+    desgloseDigital = {
+      tarjeta1:      { prod:0, prop:0 },
+      tarjeta2:      { prod:0, prop:0 },
+      transferencia: { prod:0, prop:0 },
+      tarjeta:       { prod:0, prop:0 }
+    };
     cobros.forEach(function(c){
       totProduccion += c.monto;
-      if(c.metodo === "tarjeta") totTarjeta += c.monto;
+      if(esMetodoDigital(c.metodo)){
+        const prop = propinaTicket(c);
+        totTarjetaProd += c.monto;        // producción cobrada por digital (sin propina)
+        totTarjeta     += c.monto + prop; // total a mostrar (con propina)
+        // Acumular en el desglose del método correspondiente
+        const clave = (c.metodo === "tarjeta1" || c.metodo === "tarjeta2" || c.metodo === "transferencia")
+                        ? c.metodo : "tarjeta";
+        desgloseDigital[clave].prod += c.monto;
+        desgloseDigital[clave].prop += prop;
+      }
       // Informativo: cuánto se vendió de producto y bebidas (YA está
       // dentro de totProduccion; esto NO se vuelve a sumar a nada).
       if(c.origen === "bebida"){
@@ -3256,7 +3619,11 @@
   const tickConcepto   = document.getElementById("tickConcepto");
   const tickMonto      = document.getElementById("tickMonto");
   const tickEfectivo   = document.getElementById("tickEfectivo");
-  const tickTarjeta    = document.getElementById("tickTarjeta");
+  const tickTransfer   = document.getElementById("tickTransfer");
+  const tickTarjeta1   = document.getElementById("tickTarjeta1");
+  const tickTarjeta2   = document.getElementById("tickTarjeta2");
+  const tickBloquePropina = document.getElementById("tickBloquePropina");
+  const tickPropina    = document.getElementById("tickPropina");
   const tickGuardar    = document.getElementById("tickGuardar");
   const tickEliminar   = document.getElementById("tickEliminar");
   const tickCancelar   = document.getElementById("tickCancelar");
@@ -3301,8 +3668,8 @@
       hora.textContent = formatoHora(c.creado);
 
       const etiqueta = document.createElement("span");
-      etiqueta.className = "etiqueta " + c.metodo;
-      etiqueta.textContent = c.metodo === "tarjeta" ? "Tarjeta" : "Efectivo";
+      etiqueta.className = "etiqueta " + claseMetodo(c.metodo);
+      etiqueta.textContent = etiquetaMetodo(c.metodo);
 
       info.appendChild(nombre);
       info.appendChild(concepto);
@@ -3342,8 +3709,16 @@
   }
 
   function pintarMetodoTicket(){
+    // Un ticket viejo con "tarjeta" genérico no marca ningún sub-botón,
+    // pero conserva su valor hasta que se elija uno nuevo.
     tickEfectivo.classList.toggle("activo", tickMetodo === "efectivo");
-    tickTarjeta.classList.toggle("activo", tickMetodo === "tarjeta");
+    tickTransfer.classList.toggle("activo", tickMetodo === "transferencia");
+    tickTarjeta1.classList.toggle("activo", tickMetodo === "tarjeta1");
+    tickTarjeta2.classList.toggle("activo", tickMetodo === "tarjeta2");
+    // La propina solo aplica a pagos digitales
+    const esDigital = (tickMetodo === "transferencia" || tickMetodo === "tarjeta1" || tickMetodo === "tarjeta2");
+    tickBloquePropina.style.display = esDigital ? "block" : "none";
+    if(!esDigital) tickPropina.value = "";
   }
 
   function abrirEditarTicket(c){
@@ -3352,6 +3727,7 @@
     tickMetodo = c.metodo;
     tickConcepto.value = c.concepto || "";
     tickMonto.value = c.monto;
+    tickPropina.value = c.propina ? c.propina : "";
     tickMsg.textContent = "";
     tickEliminar.textContent = "Eliminar ticket";
     confirmandoEliminar = false;
@@ -3378,9 +3754,16 @@
     tickMetodo = "efectivo";
     pintarMetodoTicket();
   });
-
-  tickTarjeta.addEventListener("click", function(){
-    tickMetodo = "tarjeta";
+  tickTransfer.addEventListener("click", function(){
+    tickMetodo = "transferencia";
+    pintarMetodoTicket();
+  });
+  tickTarjeta1.addEventListener("click", function(){
+    tickMetodo = "tarjeta1";
+    pintarMetodoTicket();
+  });
+  tickTarjeta2.addEventListener("click", function(){
+    tickMetodo = "tarjeta2";
     pintarMetodoTicket();
   });
 
@@ -3401,11 +3784,18 @@
 
     try{
       const antes = ticketEditando;
+      const esDigital = (tickMetodo === "transferencia" || tickMetodo === "tarjeta1" || tickMetodo === "tarjeta2");
+      let propinaEdit = 0;
+      if(esDigital){
+        const p = parseFloat(tickPropina.value);
+        propinaEdit = (isNaN(p) || p < 0) ? 0 : p;
+      }
       await updateDoc(doc(db, "tickets", ticketEditando.id), {
         barbero: tickBarbero,
         concepto: tickConcepto.value.trim() || "Cobro",
         monto: monto,
         metodo: tickMetodo,
+        propina: propinaEdit,
         editado: serverTimestamp()
       });
       const cambios = [];
@@ -3543,7 +3933,8 @@
     // ----- Tabla por día -----
     const hoy = fechaHoy();
     const porDia = SEMANA.map(function(f){
-      return { fecha: f, produccion: 0, servicios: 0, tcvta: 0, gastos: 0, adelantos: 0 };
+      // tcvta = total digital a mostrar (con propina); tcvtaProd = solo producción digital (sin propina, para el efectivo)
+      return { fecha: f, produccion: 0, servicios: 0, tcvta: 0, tcvtaProd: 0, gastos: 0, adelantos: 0 };
     });
 
     ticketsSemana.forEach(function(t){
@@ -3551,7 +3942,10 @@
       if(i === -1) return;
       porDia[i].produccion += t.monto;
       porDia[i].servicios += 1;
-      if(t.metodo === "tarjeta") porDia[i].tcvta += t.monto;
+      if(esMetodoDigital(t.metodo)){
+        porDia[i].tcvtaProd += t.monto;
+        porDia[i].tcvta     += t.monto + propinaTicket(t);
+      }
     });
 
     movsSemana.forEach(function(m){
@@ -3561,16 +3955,17 @@
       else porDia[i].adelantos += m.monto;
     });
 
-    const tot = { produccion:0, servicios:0, tcvta:0, comision:0, gastos:0, adelantos:0, efectivo:0 };
+    const tot = { produccion:0, servicios:0, tcvta:0, tcvtaProd:0, comision:0, gastos:0, adelantos:0, efectivo:0 };
 
     cuerpoSemanal.innerHTML = "";
     porDia.forEach(function(d, i){
       const comision = d.tcvta * 0.04;
-      const efectivo = d.produccion - d.tcvta - d.gastos - d.adelantos;
+      const efectivo = d.produccion - d.tcvtaProd - d.gastos - d.adelantos;
 
       tot.produccion += d.produccion;
       tot.servicios  += d.servicios;
       tot.tcvta      += d.tcvta;
+      tot.tcvtaProd  += d.tcvtaProd;
       tot.comision   += comision;
       tot.gastos     += d.gastos;
       tot.adelantos  += d.adelantos;
@@ -3633,7 +4028,7 @@
     // Tarjeta cobrada por barbero (para ver cuánto aporta el negocio en sus cobros con tarjeta)
     const tarjPorBarbero = {};
     ticketsSemana.forEach(function(t){
-      if(t.metodo === "tarjeta") tarjPorBarbero[t.barbero] = (tarjPorBarbero[t.barbero] || 0) + t.monto;
+      if(esMetodoDigital(t.metodo)) tarjPorBarbero[t.barbero] = (tarjPorBarbero[t.barbero] || 0) + t.monto;
     });
 
     desgloseNomina.innerHTML = "";
@@ -4190,7 +4585,7 @@
     // ----- Tabla por día -----
     const hoy = fechaHoy();
     const porDia = fechasSel.map(function(f){
-      return { fecha: f, produccion: 0, servicios: 0, tcvta: 0, gastos: 0, adelantos: 0 };
+      return { fecha: f, produccion: 0, servicios: 0, tcvta: 0, tcvtaProd: 0, gastos: 0, adelantos: 0 };
     });
 
     ticketsSel.forEach(function(t){
@@ -4198,7 +4593,10 @@
       if(i === -1) return;
       porDia[i].produccion += t.monto;
       porDia[i].servicios += 1;
-      if(t.metodo === "tarjeta") porDia[i].tcvta += t.monto;
+      if(esMetodoDigital(t.metodo)){
+        porDia[i].tcvtaProd += t.monto;
+        porDia[i].tcvta     += t.monto + propinaTicket(t);
+      }
     });
 
     movsSel.forEach(function(m){
@@ -4208,16 +4606,17 @@
       else porDia[i].adelantos += m.monto;
     });
 
-    const tot = { produccion:0, servicios:0, tcvta:0, comision:0, gastos:0, adelantos:0, efectivo:0 };
+    const tot = { produccion:0, servicios:0, tcvta:0, tcvtaProd:0, comision:0, gastos:0, adelantos:0, efectivo:0 };
 
     rsCuerpoSemanal.innerHTML = "";
     porDia.forEach(function(d, i){
       const comision = d.tcvta * 0.04;
-      const efectivo = d.produccion - d.tcvta - d.gastos - d.adelantos;
+      const efectivo = d.produccion - d.tcvtaProd - d.gastos - d.adelantos;
 
       tot.produccion += d.produccion;
       tot.servicios  += d.servicios;
       tot.tcvta      += d.tcvta;
+      tot.tcvtaProd  += d.tcvtaProd;
       tot.comision   += comision;
       tot.gastos     += d.gastos;
       tot.adelantos  += d.adelantos;
@@ -4277,7 +4676,7 @@
     // Tarjeta cobrada por barbero (semana navegada)
     const tarjPorBarbero = {};
     ticketsSel.forEach(function(t){
-      if(t.metodo === "tarjeta") tarjPorBarbero[t.barbero] = (tarjPorBarbero[t.barbero] || 0) + t.monto;
+      if(esMetodoDigital(t.metodo)) tarjPorBarbero[t.barbero] = (tarjPorBarbero[t.barbero] || 0) + t.monto;
     });
 
     rsDesgloseNomina.innerHTML = "";
@@ -4636,7 +5035,7 @@
           const sub = document.createElement("div");
           sub.className = "subItem";
           const puntoM = document.createElement("span");
-          puntoM.className = "puntoMetodo " + c.metodo;
+          puntoM.className = "puntoMetodo " + claseMetodo(c.metodo);
           const horaT = document.createElement("span");
           horaT.textContent = formatoHora(c.creado);
           sub.appendChild(puntoM);
@@ -4690,16 +5089,19 @@
     });
 
     // ----- Tarjetas del día -----
-    let prod = 0, tarj = 0, gas = 0, adel = 0;
+    let prod = 0, tarj = 0, tarjProd = 0, gas = 0, adel = 0;
     tk.forEach(function(t){
       prod += t.monto;
-      if(t.metodo === "tarjeta") tarj += t.monto;
+      if(esMetodoDigital(t.metodo)){
+        tarjProd += t.monto;                    // producción digital (sin propina)
+        tarj     += t.monto + propinaTicket(t); // total a mostrar (con propina)
+      }
     });
     mv.forEach(function(m){
       if(m.tipo === "gasto") gas += m.monto;
       else adel += m.monto;
     });
-    const efec = prod - tarj - gas - adel;
+    const efec = prod - tarjProd - gas - adel;
 
     diaProduccion.textContent = formatoDinero(prod);
     diaEfectivo.textContent   = formatoDinero(efec);
@@ -5917,7 +6319,7 @@
       function sem(lunes){
         if(!semanas[lunes]){
           semanas[lunes] = {
-            prod: 0, tcvta: 0, clientes: 0,
+            prod: 0, tcvta: 0, tcvtaProd: 0, clientes: 0,
             gastosCaja: 0, adelantos: 0,
             prodPor: {}, comisPor: {}, adelPor: {},
             bonosPor: {}, multasPor: {}, extra: 0,
@@ -5937,7 +6339,10 @@
         const s = sem(lunesDe(t.fecha));
         s.prod += t.monto;
         s.clientes += 1;
-        if(t.metodo === "tarjeta") s.tcvta += t.monto;
+        if(esMetodoDigital(t.metodo)){
+          s.tcvtaProd += t.monto;                    // producción digital (sin propina)
+          s.tcvta     += t.monto + propinaTicket(t); // total a mostrar (con propina)
+        }
         s.prodPor[t.barbero]  = (s.prodPor[t.barbero]  || 0) + t.monto;
         s.comisPor[t.barbero] = (s.comisPor[t.barbero] || 0) + comisionTicket(t);
       });
@@ -5998,11 +6403,12 @@
         const d = new Date(lunes + "T12:00:00");
         etiquetas.push(d.toLocaleDateString("es-MX", { day:"numeric", month:"short" }));
 
-        // Ingresos: producción dividida en efectivo y tarjeta
-        const efectivoIngreso = s.prod - s.tcvta;
+        // Ingresos: producción dividida en efectivo y tarjeta.
+        // El efectivo descuenta solo la producción digital (sin propina).
+        const efectivoIngreso = s.prod - s.tcvtaProd;
 
         // Efectivo real en caja (para el restante final, misma lógica que Resumen)
-        const efectivoCaja = s.prod - s.tcvta - s.gastosCaja - s.adelantos;
+        const efectivoCaja = s.prod - s.tcvtaProd - s.gastosCaja - s.adelantos;
 
         // Nómina de la semana (suma de comisiones por servicio)
         let nomina = 0;
@@ -6135,7 +6541,7 @@
       p.prod += t.monto;
       p.comis += comisionTicket(t);
       p.cli += 1;
-      if(t.metodo === "tarjeta") p.tarj += t.monto;
+      if(esMetodoDigital(t.metodo)) p.tarj += t.monto;
     });
 
     let gastosCaja = 0;
