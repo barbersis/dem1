@@ -1246,6 +1246,10 @@
             <span class="valorF rojo" id="rfNomina">−$0</span>
           </div>
           <div class="filaPanel">
+            <span class="etiquetaF">− Limpieza (fijo semanal) <button id="btnEditarLimpieza" style="margin-left:6px;padding:1px 8px;font-size:11px;border:1px solid var(--linea);border-radius:6px;background:transparent;color:var(--texto-suave);cursor:pointer;">editar</button></span>
+            <span class="valorF rojo" id="rfLimpieza">−$0</span>
+          </div>
+          <div class="filaPanel">
             <span class="etiquetaF">Efectivo restante</span>
             <span class="valorF" id="rfEfectivoRest">$0</span>
           </div>
@@ -1440,6 +1444,10 @@
               <div class="filaPanel">
                 <span class="etiquetaF">− Nómina</span>
                 <span class="valorF rojo" id="rsNomina">−$0</span>
+              </div>
+              <div class="filaPanel">
+                <span class="etiquetaF">− Limpieza (fijo semanal)</span>
+                <span class="valorF rojo" id="rsLimpieza">−$0</span>
               </div>
               <div class="filaPanel">
                 <span class="etiquetaF">Efectivo restante</span>
@@ -1659,6 +1667,7 @@
     <div class="filaBarberos" id="filaTipoCobro">
       <button class="btnBarbero activo" id="btnTipoServicio" data-tipo="servicio">Servicio</button>
       <button class="btnBarbero" id="btnTipoProducto" data-tipo="producto">Producto ($20)</button>
+      <button class="btnBarbero" id="btnTipoBebida" data-tipo="bebida">Bebidas</button>
     </div>
 
     <div class="filaMetodo">
@@ -2653,7 +2662,8 @@
 
   const btnTipoServicio = document.getElementById("btnTipoServicio");
   const btnTipoProducto = document.getElementById("btnTipoProducto");
-  let tipoCobro = "servicio"; // "servicio" o "producto"
+  const btnTipoBebida   = document.getElementById("btnTipoBebida");
+  let tipoCobro = "servicio"; // "servicio", "producto" o "bebida"
   let barberoElegido = null;
   let guardando = false;
   let fechaDestinoCobro = null; // hoy, o el día elegido en Admin > Semana
@@ -2666,6 +2676,7 @@
     tipoCobro = "servicio";
     btnTipoServicio.classList.add("activo");
     btnTipoProducto.classList.remove("activo");
+    btnTipoBebida.classList.remove("activo");
     msgModal.textContent = "";
     filaBarberos.querySelectorAll(".btnBarbero").forEach(function(b){
       b.classList.remove("activo");
@@ -2695,15 +2706,21 @@
     tipoCobro = tipo;
     btnTipoServicio.classList.toggle("activo", tipo === "servicio");
     btnTipoProducto.classList.toggle("activo", tipo === "producto");
+    btnTipoBebida.classList.toggle("activo", tipo === "bebida");
   }
   btnTipoServicio.addEventListener("click", function(){ elegirTipoCobro("servicio"); });
   btnTipoProducto.addEventListener("click", function(){ elegirTipoCobro("producto"); });
+  btnTipoBebida.addEventListener("click", function(){ elegirTipoCobro("bebida"); });
 
   async function guardarCobroManual(metodo){
     if(guardando) return;
     const monto = parseFloat(inputMonto.value);
 
-    if(barberoElegido === null){
+    const esBebida = tipoCobro === "bebida";
+
+    // Bebidas = venta directa de la barbería, no requiere barbero.
+    // Los demás cobros sí necesitan barbero o Recepción.
+    if(!esBebida && barberoElegido === null){
       msgModal.style.color = "#e05c5c";
       msgModal.textContent = "Elige un barbero o Recepción";
       return;
@@ -2722,22 +2739,33 @@
 
     try{
       const esProducto = tipoCobro === "producto";
-      const concepto = inputConcepto.value.trim() || (esProducto ? "Producto" : "Cobro manual");
-      // Si es venta de producto, el ticket lleva un item con comisión
-      // fija de $20 (para nómina). Si no, va sin items (comisión 0),
-      // como cualquier cobro manual normal.
-      const items = esProducto
-        ? [{ concepto: concepto, monto: monto, servicioId: "producto", comision: 20 }]
-        : [];
+      let concepto, items, barbero;
+
+      if(esBebida){
+        // Venta de la barbería: sin comisión, sin barbero. Va directo a caja.
+        concepto = inputConcepto.value.trim() || "Bebidas";
+        items = [];
+        barbero = "negocio";
+      } else if(esProducto){
+        // Venta de producto: comisión fija $20 para el barbero/recepción.
+        concepto = inputConcepto.value.trim() || "Producto";
+        items = [{ concepto: concepto, monto: monto, servicioId: "producto", comision: 20 }];
+        barbero = barberoElegido;
+      } else {
+        // Servicio manual normal: sin comisión (cobro suelto).
+        concepto = inputConcepto.value.trim() || "Cobro manual";
+        items = [];
+        barbero = barberoElegido;
+      }
 
       await addDoc(collection(db, "tickets"), {
-        barbero: barberoElegido,
+        barbero: barbero,
         concepto: concepto,
         monto: monto,
         items: items,
         metodo: metodo,
         fecha: fechaDestinoCobro || fechaHoy(),
-        origen: "manual",
+        origen: esBebida ? "bebida" : "manual",
         creado: serverTimestamp()
       });
       modalCobro.classList.remove("abierto");
@@ -3400,7 +3428,7 @@
   // ============================================================
   // ADMIN: RESUMEN SEMANAL Y NÓMINA
   // ============================================================
-  const TARIFA_RECEPCION = 320;
+  const TARIFA_RECEPCION = 400;
   const cuerpoSemanal    = document.getElementById("cuerpoSemanal");
   const semEfectivoTotal = document.getElementById("semEfectivoTotal");
   const semNominaTotal   = document.getElementById("semNominaTotal");
@@ -3431,6 +3459,8 @@
   }, function(err){ /* sin pagos aún */ });
   const rfEfectivoDisp   = document.getElementById("rfEfectivoDisp");
   const rfNomina         = document.getElementById("rfNomina");
+  const rfLimpieza       = document.getElementById("rfLimpieza");
+  const btnEditarLimpieza = document.getElementById("btnEditarLimpieza");
   const rfEfectivoRest   = document.getElementById("rfEfectivoRest");
   const rfTarjetaNeta    = document.getElementById("rfTarjetaNeta");
   const cardEfectivoRest = document.getElementById("cardEfectivoRest");
@@ -3439,11 +3469,28 @@
   const valorT2          = document.getElementById("valorT2");
 
   // Días de Recepción de la semana actual (capturados en Nómina > Recepción)
+  const GASTO_LIMPIEZA_DEFAULT = 1500;
   let diasRecepcionSemanaActual = 0;
+  let gastoLimpiezaSemanaActual = GASTO_LIMPIEZA_DEFAULT;
   onSnapshot(doc(db, "nomina", "config-" + SEMANA[0]), function(s){
     diasRecepcionSemanaActual = (s.exists() && s.data().diasRecepcion) ? s.data().diasRecepcion : 0;
+    gastoLimpiezaSemanaActual = (s.exists() && typeof s.data().gastoLimpieza === "number")
+                                  ? s.data().gastoLimpieza : GASTO_LIMPIEZA_DEFAULT;
     recalcularSemana();
   }, function(err){ /* sin captura aún */ });
+
+  if(btnEditarLimpieza){
+    btnEditarLimpieza.addEventListener("click", async function(){
+      const actual = gastoLimpiezaSemanaActual;
+      const resp = prompt("Gasto fijo de limpieza para esta semana ($):", actual);
+      if(resp === null) return; // canceló
+      const nuevo = parseFloat(resp);
+      if(isNaN(nuevo) || nuevo < 0){ alert("Escribe un monto válido."); return; }
+      try{
+        await setDoc(doc(db, "nomina", "config-" + SEMANA[0]), { gastoLimpieza: nuevo }, { merge:true });
+      }catch(err){ alert("Error al guardar: " + err.message); }
+    });
+  }
 
   let ticketsSemana = [];
   let movsSemana = [];
@@ -3682,13 +3729,15 @@
     // T1/T2 se calculan SIEMPRE con la nómina completa: marcar
     // pagos solo ajusta lo que se muestra en Efectivo, Nómina y
     // Tarjeta (lo pendiente/real en caja), nunca el rendimiento.
-    const efectivoRestante = tot.efectivo - nominaTotal;
+    const gastoLimpieza = gastoLimpiezaSemanaActual;
+    const efectivoRestante = tot.efectivo - nominaTotal - gastoLimpieza;
     const tarjetaTotal = tot.tcvta;   // total de tarjeta (sin restar comisión, se ajusta en el sistema real)
-    const t1 = efectivoRestante;      // Efectivo − Nómina
+    const t1 = efectivoRestante;      // Efectivo − Nómina − Limpieza
     const t2 = t1 + tarjetaTotal;     // + Tarjeta
 
     rfEfectivoDisp.textContent = formatoDinero(tot.efectivo - pagadoEfectivo);
     rfNomina.textContent = "− " + formatoDinero(nominaPendiente);
+    rfLimpieza.textContent = "− " + formatoDinero(gastoLimpieza);
     rfEfectivoRest.textContent = formatoDinero(efectivoRestante);
     rfEfectivoRest.style.color = efectivoRestante < 0 ? "#e05c5c" : "";
     rfTarjetaNeta.textContent = "+ " + formatoDinero(tarjetaTotal - pagadoTransfer);
@@ -4056,6 +4105,7 @@
   let notasSel = [];
   let itemsNominaSel = [];      // bonos, multas y extras de la semana navegada
   let diasRecepcionSel = 0;     // días de Recepción de la semana navegada
+  let gastoLimpiezaSel = 1500;  // gasto de limpieza de la semana navegada
   let notaBorrandoDia = null;
   let pararTicketsSel = null, pararMovsSel = null, pararNotasSel = null;
   let pararNominaSel = null, pararConfigSel = null, pararPagosSel = null;
@@ -4100,6 +4150,7 @@
   const rsComisProducto    = document.getElementById("rsComisProducto");
   const rsEfectivoDisp     = document.getElementById("rsEfectivoDisp");
   const rsNomina           = document.getElementById("rsNomina");
+  const rsLimpieza         = document.getElementById("rsLimpieza");
   const rsEfectivoRest     = document.getElementById("rsEfectivoRest");
   const rsTarjetaNeta      = document.getElementById("rsTarjetaNeta");
   const rsCardEfectivoRest = document.getElementById("rsCardEfectivoRest");
@@ -4314,13 +4365,15 @@
     rsComisProducto.textContent = formatoDinero(comisProductoTotal);
 
     // ----- Resultado final -----
-    const efectivoRestante = tot.efectivo - nominaTotal;
+    const gastoLimpieza = gastoLimpiezaSel;
+    const efectivoRestante = tot.efectivo - nominaTotal - gastoLimpieza;
     const tarjetaTotal = tot.tcvta;   // total de tarjeta (sin restar comisión)
-    const t1 = efectivoRestante;      // Efectivo − Nómina
+    const t1 = efectivoRestante;      // Efectivo − Nómina − Limpieza
     const t2 = t1 + tarjetaTotal;     // + Tarjeta
 
     rsEfectivoDisp.textContent = formatoDinero(tot.efectivo - pagadoEfectivo);
     rsNomina.textContent = "− " + formatoDinero(nominaPendiente);
+    rsLimpieza.textContent = "− " + formatoDinero(gastoLimpieza);
     rsEfectivoRest.textContent = formatoDinero(efectivoRestante);
     rsEfectivoRest.style.color = efectivoRestante < 0 ? "#e05c5c" : "";
     rsTarjetaNeta.textContent = "+ " + formatoDinero(tarjetaTotal - pagadoTransfer);
@@ -4411,10 +4464,13 @@
 
     // Días de Recepción de la semana navegada
     diasRecepcionSel = 0;
+    gastoLimpiezaSel = GASTO_LIMPIEZA_DEFAULT;
     pararConfigSel = onSnapshot(
       doc(db, "nomina", "config-" + fechasSel[0]),
       function(s){
         diasRecepcionSel = (s.exists() && s.data().diasRecepcion) ? s.data().diasRecepcion : 0;
+        gastoLimpiezaSel = (s.exists() && typeof s.data().gastoLimpieza === "number")
+                             ? s.data().gastoLimpieza : GASTO_LIMPIEZA_DEFAULT;
         rsRecalcular();
       },
       function(err){ /* sin captura aún */ }

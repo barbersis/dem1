@@ -640,7 +640,7 @@
     <button id="btnEnviar" disabled>Enviar ticket</button>
     <div id="notaEnviar"></div>
 
-    <div class="tituloSeccion">Mis tickets de hoy</div>
+    <div class="tituloSeccion">Mi comisión de hoy</div>
     <div id="listaMisTickets">
       <div class="vacioMio">Aún no has enviado tickets hoy.</div>
     </div>
@@ -710,6 +710,17 @@
   function formatoDinero(n){
     const r = Math.round(n * 100) / 100;
     return "$" + r.toLocaleString("es-MX");
+  }
+
+  // Suma la comisión del barbero en un ticket (lo que él gana,
+  // NO lo que cobró el cliente). Lee it.comision de cada item.
+  function comisionTicket(t){
+    if(!t || !Array.isArray(t.items)) return 0;
+    let total = 0;
+    t.items.forEach(function(it){
+      if(it && typeof it.comision === "number") total += it.comision;
+    });
+    return total;
   }
 
   function formatoHora(ts){
@@ -1120,7 +1131,8 @@
 
       const monto = document.createElement("div");
       monto.className = "montoMio";
-      monto.textContent = formatoDinero(t.monto);
+      // Mostrar la COMISIÓN del barbero (lo que él gana), no lo que cobró el cliente
+      monto.textContent = formatoDinero(comisionTicket(t));
 
       fila.appendChild(serv);
       fila.appendChild(monto);
@@ -1230,17 +1242,15 @@
       where("barbero", "==", barberoActual.num)
     );
     pararClientes = onSnapshot(consulta, function(snap){
-      let total = 0;
       cobradosCache = [];
       snap.forEach(function(d){
-        total += d.data().monto;
         cobradosCache.push({ id: d.id, ...d.data() });
       });
       numClientes.textContent = snap.size;
       if(snap.size === 0){
         subClientes.textContent = "Aún sin clientes";
       } else {
-        subClientes.innerHTML = 'Producción: <span id="prodHoy">' + formatoDinero(total) + '</span>';
+        subClientes.textContent = snap.size === 1 ? "1 servicio cobrado" : (snap.size + " servicios cobrados");
       }
       renderMisTickets();
     }, function(err){ mostrarError(err); });
