@@ -1113,6 +1113,13 @@
           <div class="tituloCard">Clientes</div>
           <div class="valorCard" id="cardClientes">0</div>
         </div>
+        <div class="card">
+          <div class="tituloCard">Producto · Bebidas</div>
+          <div class="valorCard" id="cardProdBebidas" style="font-size:15px;line-height:1.4;">
+            <span style="color:var(--texto-suave);font-size:12px;">Prod.</span> <span id="cardVentaProducto">$0</span><br>
+            <span style="color:var(--texto-suave);font-size:12px;">Beb.</span> <span id="cardVentaBebidas">$0</span>
+          </div>
+        </div>
       </div>
       <div id="cardComision">Comisión tarjeta 4% (informativa): $0</div>
 
@@ -2424,12 +2431,16 @@
   const cardAdelantos  = document.getElementById("cardAdelantos");
   const cardClientes   = document.getElementById("cardClientes");
   const cardComision   = document.getElementById("cardComision");
+  const cardVentaProducto = document.getElementById("cardVentaProducto");
+  const cardVentaBebidas  = document.getElementById("cardVentaBebidas");
 
   let totProduccion = 0;
   let totTarjeta    = 0;
   let totGastos     = 0;
   let totAdelantos  = 0;
   let totClientes   = 0;
+  let totVentaProducto = 0;
+  let totVentaBebidas  = 0;
 
   function actualizarCards(){
     const comision = totTarjeta * 0.04;
@@ -2441,6 +2452,8 @@
     cardGastos.textContent     = formatoDinero(totGastos);
     cardAdelantos.textContent  = formatoDinero(totAdelantos);
     cardClientes.textContent   = totClientes;
+    if(cardVentaProducto) cardVentaProducto.textContent = formatoDinero(totVentaProducto);
+    if(cardVentaBebidas)  cardVentaBebidas.textContent  = formatoDinero(totVentaBebidas);
     cardComision.textContent   = "Comisión tarjeta 4% (informativa): " + formatoDinero(comision);
 
     cardEfectivo.classList.toggle("rojo", efectivo < 0);
@@ -3214,9 +3227,20 @@
     totProduccion = 0;
     totTarjeta = 0;
     totClientes = cobros.length;
+    totVentaProducto = 0;
+    totVentaBebidas = 0;
     cobros.forEach(function(c){
       totProduccion += c.monto;
       if(c.metodo === "tarjeta") totTarjeta += c.monto;
+      // Informativo: cuánto se vendió de producto y bebidas (YA está
+      // dentro de totProduccion; esto NO se vuelve a sumar a nada).
+      if(c.origen === "bebida"){
+        totVentaBebidas += c.monto;
+      } else if(Array.isArray(c.items)){
+        c.items.forEach(function(it){
+          if(it && it.servicioId === "producto") totVentaProducto += (it.monto || 0);
+        });
+      }
     });
     actualizarCards();
     renderColumnas();
@@ -5153,17 +5177,20 @@
       return;
     }
 
-    let prod = 0;
     let comisServicio = 0;  // comisión por servicios reales
     let comisProducto = 0;  // comisión por venta de producto ($20 c/u)
+    let numServicios = 0;   // conteo de servicios reales (sin productos), acumulado en la semana
     nomTicketsC.forEach(function(t){
       if(t.barbero !== num) return;
-      prod += t.monto;
       if(Array.isArray(t.items)){
         t.items.forEach(function(it){
-          if(!it || typeof it.comision !== "number") return;
-          if(it.servicioId === "producto") comisProducto += it.comision;
-          else comisServicio += it.comision;
+          if(!it) return;
+          if(it.servicioId === "producto"){
+            if(typeof it.comision === "number") comisProducto += it.comision;
+          } else {
+            numServicios += 1;
+            if(typeof it.comision === "number") comisServicio += it.comision;
+          }
         });
       }
     });
@@ -5172,19 +5199,12 @@
       if(m.tipo === "adelanto" && m.quien === num) adel += m.monto;
     });
 
-    // Bonos, multas y extras de este barbero en la semana
+    // Bonos y multas de este barbero en la semana
     const misItems = nomItemsC.filter(function(it){ return it.barbero === num; });
-    let bonos = 0, multas = 0, extra = 0;
+    let bonos = 0, multas = 0;
     misItems.forEach(function(it){
       if(it.tipo === "bono") bonos += it.monto;
       else if(it.tipo === "multa") multas += it.monto;
-      else if(it.tipo === "extra") extra += it.monto;
-    });
-
-    // Total cobrado con tarjeta por este barbero en la semana
-    let tarj = 0;
-    nomTicketsC.forEach(function(t){
-      if(t.barbero === num && t.metodo === "tarjeta") tarj += t.monto;
     });
 
     const total = comisServicio + comisProducto - adel + bonos - multas;
@@ -5193,10 +5213,9 @@
     let html =
       '<div class="tituloSeccion"><span>Nómina de ' + esc(nombre) + '</span></div>' +
       '<div class="panelFilas">' +
-        '<div class="filaPanel"><span class="etiquetaF">Producción de la semana</span><span class="valorF">' + formatoDinero(prod) + '</span></div>' +
-        '<div class="filaPanel"><span class="etiquetaF">Cobros con tarjeta</span><span class="valorF azul">' + formatoDinero(tarj) + '</span></div>' +
         '<div class="filaPanel"><span class="etiquetaF">Comisiones por servicio</span><span class="valorF">' + formatoDinero(comisServicio) + '</span></div>' +
         '<div class="filaPanel"><span class="etiquetaF">+ Comisión por venta de producto</span><span class="valorF verde">+ ' + formatoDinero(comisProducto) + '</span></div>' +
+        '<div class="filaPanel"><span class="etiquetaF">Servicios de la semana</span><span class="valorF">' + numServicios + '</span></div>' +
         '<div class="filaPanel"><span class="etiquetaF">− Adelantos</span><span class="valorF rojo">− ' + formatoDinero(adel) + '</span></div>' +
         '<div class="filaPanel"><span class="etiquetaF">+ Bonos</span><span class="valorF verde">+ ' + formatoDinero(bonos) + '</span></div>' +
         '<div class="filaPanel"><span class="etiquetaF">− Multas</span><span class="valorF rojo">− ' + formatoDinero(multas) + '</span></div>' +
