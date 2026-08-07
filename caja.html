@@ -1353,7 +1353,6 @@
           <h4>Agregar barbero</h4>
           <input type="text" id="agregarNombre" placeholder="Nombre" autocomplete="off">
           <div class="filaAgregar">
-            <input type="number" id="agregarPorcentaje" placeholder="%" value="40" inputmode="numeric" min="0" max="100">
             <input type="text" id="agregarPin" placeholder="PIN 4 dígitos" maxlength="4" inputmode="numeric" autocomplete="off">
             <button id="agregarBtn">+ Agregar</button>
           </div>
@@ -1958,9 +1957,6 @@
 
     <label>Nombre</label>
     <input type="text" id="editNombre" placeholder="Ej. Ale" autocomplete="off">
-
-    <label>Porcentaje de destajo (%)</label>
-    <input type="number" id="editPorcentaje" placeholder="40" inputmode="numeric" min="0" max="100">
 
     <label>PIN (4 dígitos)</label>
     <input type="text" id="editPin" placeholder="0000" maxlength="4" inputmode="numeric" autocomplete="off">
@@ -4295,7 +4291,6 @@
 
   // ----- Agregar barbero -----
   const agregarNombre     = document.getElementById("agregarNombre");
-  const agregarPorcentaje = document.getElementById("agregarPorcentaje");
   const agregarPin        = document.getElementById("agregarPin");
   const agregarBtn        = document.getElementById("agregarBtn");
   const agregarMsg        = document.getElementById("agregarMsg");
@@ -4305,17 +4300,11 @@
     if(agregando) return;
 
     const nombre = agregarNombre.value.trim();
-    const porcentaje = parseFloat(agregarPorcentaje.value);
     const pin = agregarPin.value.trim();
 
     if(nombre === ""){
       agregarMsg.style.color = "#e05c5c";
       agregarMsg.textContent = "Escribe el nombre";
-      return;
-    }
-    if(isNaN(porcentaje) || porcentaje < 0 || porcentaje > 100){
-      agregarMsg.style.color = "#e05c5c";
-      agregarMsg.textContent = "El porcentaje debe estar entre 0 y 100";
       return;
     }
     if(!/^\d{4}$/.test(pin)){
@@ -4346,7 +4335,7 @@
       await setDoc(doc(db, "barberos", String(nuevoNum)), {
         num: nuevoNum,
         nombre: nombre,
-        porcentaje: porcentaje,
+        porcentaje: 0,
         pin: pin,
         vip: false,
         confirmarCita: false,
@@ -4355,7 +4344,6 @@
         creado: serverTimestamp()
       });
       agregarNombre.value = "";
-      agregarPorcentaje.value = "40";
       agregarPin.value = "";
       agregarMsg.style.color = "#4caf50";
       agregarMsg.textContent = nombre + " agregado ✓";
@@ -4390,7 +4378,6 @@
   const modalEditar       = document.getElementById("modalEditarBarbero");
   const editTitulo        = document.getElementById("editTitulo");
   const editNombre        = document.getElementById("editNombre");
-  const editPorcentaje    = document.getElementById("editPorcentaje");
   const editPin           = document.getElementById("editPin");
   const editDias          = document.getElementById("editDias");
   const editGuardar       = document.getElementById("editGuardar");
@@ -4404,7 +4391,6 @@
     barberoEditando = b;
     editTitulo.textContent = "Editar Barbero " + b.num;
     editNombre.value = b.nombre || "";
-    editPorcentaje.value = b.porcentaje;
     editPin.value = b.pin;
     editDias.querySelectorAll(".btnDia").forEach(function(btn){
       const activo = (b.descanso || []).includes(btn.dataset.dia);
@@ -4428,14 +4414,8 @@
   editGuardar.addEventListener("click", async function(){
     if(guardandoEdicion || !barberoEditando) return;
 
-    const porcentaje = parseFloat(editPorcentaje.value);
     const pin = editPin.value.trim();
 
-    if(isNaN(porcentaje) || porcentaje < 0 || porcentaje > 100){
-      editMsg.style.color = "#e05c5c";
-      editMsg.textContent = "El porcentaje debe estar entre 0 y 100";
-      return;
-    }
     if(!/^\d{4}$/.test(pin)){
       editMsg.style.color = "#e05c5c";
       editMsg.textContent = "El PIN debe ser de 4 dígitos";
@@ -4463,7 +4443,6 @@
     try{
       await updateDoc(doc(db, "barberos", barberoEditando.id), {
         nombre: editNombre.value.trim(),
-        porcentaje: porcentaje,
         pin: pin,
         vip: false,
         confirmarCita: !!barberoEditando.confirmarCita,
