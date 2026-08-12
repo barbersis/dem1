@@ -793,6 +793,7 @@
     pantallaPin.style.display = "none";
     pantallaBarbero.style.display = "block";
 
+    await cargarTabuladores();
     renderCatalogo();
     limpiarTicket();
     escucharClientesHoy();
@@ -806,36 +807,106 @@
   // ============================================================
   // CATÁLOGO DE JOSS — comisión fija por servicio (NO por %)
   // ------------------------------------------------------------
-  // Cada servicio trae:
-  //   id       → clave estable para que nómina lea qué se hizo
-  //   n        → nombre visible
-  //   p        → precio que paga el cliente (va a la caja)
-  //   comision → { NombreBarbero: pesos fijos que gana ese barbero }
-  //              si el nombre de barberoActual no aparece aquí,
-  //              ese barbero no ve el botón (no ofrece el servicio)
-  // Sin VIP, sin paquetes — este cliente no los maneja.
+  // NUEVO MODELO (Gestor de barberos y nóminas):
+  //   La comisión ya NO se decide por el NOMBRE del barbero, sino
+  //   por su TABULADOR de pago (campo metodoPago en su documento).
+  //
+  //   SERVICIOS  → solo la ficha del servicio (id, nombre, precio).
+  //                id  = clave estable para que nómina lea qué se hizo
+  //                n   = nombre visible
+  //                p   = precio que paga el cliente (va a la caja)
+  //
+  //   TABULADORES → cada tabulador dice cuánto gana el barbero por
+  //                 cada servicio. Si un servicioId NO aparece en el
+  //                 tabulador, ese barbero no ofrece ese servicio
+  //                 (no ve el botón).
+  //
+  //   Los tabuladores REALES viven en Firestore (colección
+  //   "tabuladores"), editables desde Admin. Lo de abajo es solo un
+  //   RESPALDO para que la app funcione aunque la colección aún no
+  //   se haya creado — se usa únicamente si Firestore no responde.
   // ============================================================
-  const CATALOGO_JOSS = [
-    { id:"corte",        n:"Corte",                          p:250, comision:{ Antony:80, Oliver:80, Cinthya:80, Homero:100, Joss:100 } },
-    { id:"ritual",       n:"Ritual de barba",                p:260, comision:{ Antony:80, Oliver:80, Cinthya:80, Homero:104, Joss:104 } },
-    { id:"barbaexpress", n:"Barba express",                  p:180, comision:{ Antony:70, Oliver:70, Cinthya:70, Homero:72,  Joss:72  } },
-    { id:"disenobarba",  n:"Diseño de barba",                p:120, comision:{ Antony:45, Oliver:45, Cinthya:45, Homero:48,  Joss:48  } },
-    { id:"cejanavaja",   n:"Depilación de ceja con navaja",  p:100, comision:{ Antony:40, Oliver:40, Cinthya:40, Homero:40,  Joss:40  } },
-    { id:"contornos",    n:"Limpieza de contornos",          p:100, comision:{ Antony:40, Oliver:40, Cinthya:40, Homero:40,  Joss:40  } },
-    { id:"facial",       n:"Facial",                         p:200, comision:{ Antony:80, Oliver:80, Cinthya:80, Homero:80,  Joss:80  } },
-    { id:"exfoliacion",  n:"Exfoliación",                    p:70,  comision:{ Antony:28, Oliver:28, Cinthya:28, Homero:28,  Joss:28  } },
-    // Exclusivos de Joss — solo él los ofrece:
-    { id:"tintebarba",   n:"Tinte de barba",                 p:200, comision:{ Joss:80  } },
-    { id:"cortedama",    n:"Corte de dama",                  p:300, comision:{ Joss:100 } },
-    { id:"cejahilo",     n:"Depilación de ceja con hilo",    p:200, comision:{ Joss:80  } }
+  const SERVICIOS_JOSS = [
+    { id:"corte",        n:"Corte",                          p:250 },
+    { id:"ritual",       n:"Ritual de barba",                p:260 },
+    { id:"barbaexpress", n:"Barba express",                  p:180 },
+    { id:"disenobarba",  n:"Diseño de barba",                p:120 },
+    { id:"cejanavaja",   n:"Depilación de ceja con navaja",  p:100 },
+    { id:"contornos",    n:"Limpieza de contornos",          p:100 },
+    { id:"facial",       n:"Facial",                         p:200 },
+    { id:"exfoliacion",  n:"Exfoliación",                    p:70  },
+    // Exclusivos del dueño — solo el tabulador "joss" los incluye:
+    { id:"tintebarba",   n:"Tinte de barba",                 p:200 },
+    { id:"cortedama",    n:"Corte de dama",                  p:300 },
+    { id:"cejahilo",     n:"Depilación de ceja con hilo",    p:200 }
   ];
+
+  // Respaldo local de los tabuladores (mismos montos que antes).
+  // metodo1 = rango Antony/Oliver/Cinthya · metodo2 = rango Homero
+  // joss    = dueño: los 8 compartidos (rango Joss) + sus 3 exclusivos
+  const TABULADORES_FALLBACK = {
+    metodo1: {
+      nombre: "Método 1",
+      comisiones: { corte:80, ritual:80, barbaexpress:70, disenobarba:45, cejanavaja:40, contornos:40, facial:80, exfoliacion:28 }
+    },
+    metodo2: {
+      nombre: "Método 2",
+      comisiones: { corte:100, ritual:104, barbaexpress:72, disenobarba:48, cejanavaja:40, contornos:40, facial:80, exfoliacion:28 }
+    },
+    joss: {
+      nombre: "Joss (dueño)",
+      comisiones: { corte:100, ritual:104, barbaexpress:72, disenobarba:48, cejanavaja:40, contornos:40, facial:80, exfoliacion:28, tintebarba:80, cortedama:100, cejahilo:80 }
+    }
+  };
+
+  // Tabuladores en memoria (se llenan desde Firestore al entrar).
+  let TABULADORES = TABULADORES_FALLBACK;
+
+  // Trae los tabuladores desde Firestore. Si no existen o falla,
+  // se queda con el respaldo local (la app nunca se rompe).
+  async function cargarTabuladores(){
+    try{
+      const snap = await getDocs(collection(db, "tabuladores"));
+      if(snap.empty) return; // aún no migrado: usa el respaldo
+      const cargados = {};
+      snap.forEach(function(d){
+        const data = d.data() || {};
+        cargados[d.id] = {
+          nombre: data.nombre || d.id,
+          comisiones: data.comisiones || {}
+        };
+      });
+      TABULADORES = cargados;
+    } catch(e){
+      // Sin conexión / sin permisos: seguimos con el respaldo local
+      TABULADORES = TABULADORES_FALLBACK;
+    }
+  }
+
+  // Devuelve el tabulador que le toca a un barbero. Compatibilidad:
+  // si un barbero viejo aún no tiene metodoPago, lo deduce por nombre
+  // (Homero/Joss → su tabulador; el resto → metodo1) para no dejar a
+  // nadie sin servicios mientras se asignan los tabuladores en Admin.
+  function tabuladorDe(barbero){
+    let clave = barbero && barbero.metodoPago;
+    if(!clave){
+      const nom = (barbero && barbero.nombre) || "";
+      if(nom === "Joss")       clave = "joss";
+      else if(nom === "Homero") clave = "metodo2";
+      else                      clave = "metodo1";
+    }
+    return TABULADORES[clave] || TABULADORES.metodo1 || { comisiones:{} };
+  }
 
   const gridServicios = document.getElementById("gridServicios");
 
   function renderCatalogo(){
-    // Solo se muestran los servicios que ESTE barbero de verdad ofrece
-    const disponibles = CATALOGO_JOSS.filter(function(s){
-      return s.comision[barberoActual.nombre] !== undefined;
+    const tab = tabuladorDe(barberoActual);
+    const comisiones = tab.comisiones || {};
+
+    // Solo se muestran los servicios que ofrece el TABULADOR de este barbero
+    const disponibles = SERVICIOS_JOSS.filter(function(s){
+      return comisiones[s.id] !== undefined;
     });
 
     gridServicios.innerHTML = "";
@@ -855,7 +926,7 @@
       btn.appendChild(precio);
 
       btn.addEventListener("click", function(){
-        agregarItem(s.n, s.p, s.id, s.comision[barberoActual.nombre]);
+        agregarItem(s.n, s.p, s.id, comisiones[s.id]);
       });
 
       gridServicios.appendChild(btn);

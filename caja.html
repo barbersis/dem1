@@ -821,6 +821,104 @@
     min-height:16px;
   }
 
+  /* ===== SELECTOR DE TABULADOR ===== */
+  .etiquetaSelect{
+    display:block;
+    font-size:12px;
+    color:var(--texto-suave);
+    margin-bottom:6px;
+  }
+  .selectTabulador{
+    width:100%;
+    padding:12px;
+    font-size:15px;
+    border-radius:10px;
+    border:1px solid var(--borde);
+    background:var(--fondo);
+    color:var(--texto);
+    margin-bottom:10px;
+  }
+  .selectTabulador:focus{ outline:none; border-color:var(--ambar); }
+
+  /* ===== ADMIN: GESTIÓN DE TABULADORES ===== */
+  .tabuladorCard{
+    background:var(--panel);
+    border:1px solid var(--borde);
+    border-radius:12px;
+    padding:14px;
+    margin-top:10px;
+  }
+  .tabuladorCard .cabT{
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+    gap:10px;
+    cursor:pointer;
+  }
+  .tabuladorCard .cabT .nomT{ font-weight:700; font-size:15px; }
+  .tabuladorCard .cabT .flechaT{ color:var(--texto-suave); font-size:13px; }
+  .tabuladorCard .cuerpoT{ display:none; margin-top:12px; }
+  .tabuladorCard.abierto .cuerpoT{ display:block; }
+  .filaServT{
+    display:grid;
+    grid-template-columns:1fr 92px;
+    gap:10px;
+    align-items:center;
+    padding:6px 0;
+    border-bottom:1px solid var(--borde);
+  }
+  .filaServT:last-of-type{ border-bottom:none; }
+  .filaServT .nomServT{ font-size:14px; }
+  .filaServT .noOfrece{ font-size:12px; color:var(--texto-suave); }
+  .filaServT input{
+    width:100%;
+    padding:8px;
+    font-size:14px;
+    text-align:right;
+    border-radius:8px;
+    border:1px solid var(--borde);
+    background:var(--fondo);
+    color:var(--texto);
+  }
+  .filaServT input:focus{ outline:none; border-color:var(--ambar); }
+  .btnGuardarT{
+    width:100%;
+    margin-top:12px;
+    padding:11px;
+    font-size:14px;
+    font-weight:700;
+    border:none;
+    border-radius:10px;
+    background:var(--ambar);
+    color:#121212;
+    cursor:pointer;
+  }
+  .msgT{
+    font-size:12px;
+    color:var(--texto-suave);
+    margin-top:8px;
+    min-height:14px;
+  }
+  #btnSembrarTab{
+    width:100%;
+    padding:13px;
+    font-size:14px;
+    font-weight:700;
+    border:none;
+    border-radius:12px;
+    background:var(--ambar);
+    color:#121212;
+    cursor:pointer;
+    margin-top:10px;
+  }
+  #msgTabuladores{
+    color:var(--texto-suave);
+    font-size:13px;
+    margin-top:10px;
+    min-height:16px;
+    text-align:center;
+  }
+
   #btnCerrarAdmin{
     width:100%;
     margin-top:24px;
@@ -1352,12 +1450,20 @@
         <div class="formAgregar">
           <h4>Agregar barbero</h4>
           <input type="text" id="agregarNombre" placeholder="Nombre" autocomplete="off">
+          <label class="etiquetaSelect" for="agregarMetodo">Tabulador de pago</label>
+          <select id="agregarMetodo" class="selectTabulador"></select>
           <div class="filaAgregar">
             <input type="text" id="agregarPin" placeholder="PIN 4 dígitos" maxlength="4" inputmode="numeric" autocomplete="off">
             <button id="agregarBtn">+ Agregar</button>
           </div>
           <div id="agregarMsg"></div>
         </div>
+
+        <div class="tituloSeccion" style="margin-top:24px;"><span>Tabuladores de pago</span></div>
+        <div id="listaTabuladores">
+          <div class="filaPanel"><span class="etiquetaF">Cargando tabuladores...</span></div>
+        </div>
+        <div id="msgTabuladores"></div>
 
         <div class="tituloSeccion"><span>Tickets de hoy (editar / eliminar)</span></div>
         <div id="listaTicketsAdmin">
@@ -1960,6 +2066,9 @@
 
     <label>PIN (4 dígitos)</label>
     <input type="text" id="editPin" placeholder="0000" maxlength="4" inputmode="numeric" autocomplete="off">
+
+    <label>Tabulador de pago</label>
+    <select id="editMetodo" class="selectTabulador"></select>
 
     <label>Días de descanso</label>
     <div class="filaDias" id="editDias">
@@ -4181,6 +4290,218 @@
   let creandoBarberos = false;
   let bajaPendiente = null; // num del barbero en confirmación de baja
 
+  // ============================================================
+  // ADMIN: TABULADORES DE PAGO (motor de comisiones editable)
+  // ------------------------------------------------------------
+  // Cada tabulador dice cuánto gana el barbero por cada servicio.
+  // Vive en Firestore (colección "tabuladores"). barb.html lo lee
+  // para saber qué servicios ofrece cada barbero y cuánto le paga,
+  // según el campo metodoPago del barbero (ya no por su nombre).
+  //
+  // Lista de servicios: DEBE coincidir en id con la de barb.html.
+  // ============================================================
+  const SERVICIOS_CATALOGO = [
+    { id:"corte",        n:"Corte" },
+    { id:"ritual",       n:"Ritual de barba" },
+    { id:"barbaexpress", n:"Barba express" },
+    { id:"disenobarba",  n:"Diseño de barba" },
+    { id:"cejanavaja",   n:"Depilación de ceja con navaja" },
+    { id:"contornos",    n:"Limpieza de contornos" },
+    { id:"facial",       n:"Facial" },
+    { id:"exfoliacion",  n:"Exfoliación" },
+    { id:"tintebarba",   n:"Tinte de barba" },
+    { id:"cortedama",    n:"Corte de dama" },
+    { id:"cejahilo",     n:"Depilación de ceja con hilo" }
+  ];
+
+  function nombreServicio(id){
+    const s = SERVICIOS_CATALOGO.find(function(x){ return x.id === id; });
+    return s ? s.n : id;
+  }
+
+  // Valores iniciales para la SIEMBRA (migración de una sola vez).
+  // Mismos montos que tenía el catálogo fijo de barb.html.
+  const TABULADORES_SEMILLA = {
+    metodo1: {
+      nombre: "Método 1",
+      orden: 1,
+      comisiones: { corte:80, ritual:80, barbaexpress:70, disenobarba:45, cejanavaja:40, contornos:40, facial:80, exfoliacion:28 }
+    },
+    metodo2: {
+      nombre: "Método 2",
+      orden: 2,
+      comisiones: { corte:100, ritual:104, barbaexpress:72, disenobarba:48, cejanavaja:40, contornos:40, facial:80, exfoliacion:28 }
+    },
+    joss: {
+      nombre: "Joss (dueño)",
+      orden: 3,
+      comisiones: { corte:100, ritual:104, barbaexpress:72, disenobarba:48, cejanavaja:40, contornos:40, facial:80, exfoliacion:28, tintebarba:80, cortedama:100, cejahilo:80 }
+    }
+  };
+
+  let tabuladoresCache = {}; // { id: { nombre, orden, comisiones } }
+
+  // Poblar los <select> de Agregar/Editar barbero con los tabuladores
+  function opcionesTabulador(){
+    const ids = Object.keys(tabuladoresCache).sort(function(a, b){
+      return (tabuladoresCache[a].orden || 99) - (tabuladoresCache[b].orden || 99);
+    });
+    if(ids.length === 0){
+      // Aún no sembrados: ofrecer las semillas para no dejar el select vacío
+      return Object.keys(TABULADORES_SEMILLA).map(function(id){
+        return '<option value="' + id + '">' + TABULADORES_SEMILLA[id].nombre + '</option>';
+      }).join("");
+    }
+    return ids.map(function(id){
+      return '<option value="' + id + '">' + (tabuladoresCache[id].nombre || id) + '</option>';
+    }).join("");
+  }
+
+  function refrescarSelectsTabulador(){
+    const selAgregar = document.getElementById("agregarMetodo");
+    const selEditar  = document.getElementById("editMetodo");
+    if(selAgregar) selAgregar.innerHTML = opcionesTabulador();
+    if(selEditar)  selEditar.innerHTML  = opcionesTabulador();
+  }
+
+  // Render de las tarjetas de tabuladores (editar montos por servicio)
+  const listaTabuladores = document.getElementById("listaTabuladores");
+  const msgTabuladores   = document.getElementById("msgTabuladores");
+
+  function renderTabuladores(){
+    const ids = Object.keys(tabuladoresCache).sort(function(a, b){
+      return (tabuladoresCache[a].orden || 99) - (tabuladoresCache[b].orden || 99);
+    });
+
+    if(ids.length === 0){
+      listaTabuladores.innerHTML = "";
+      const aviso = document.createElement("div");
+      aviso.className = "filaPanel";
+      aviso.innerHTML = '<span class="etiquetaF">Aún no se han creado los tabuladores. Créalos una vez para empezar.</span>';
+      listaTabuladores.appendChild(aviso);
+
+      const btn = document.createElement("button");
+      btn.id = "btnSembrarTab";
+      btn.textContent = "Crear tabuladores (Método 1, Método 2, Joss)";
+      btn.addEventListener("click", sembrarTabuladores);
+      listaTabuladores.appendChild(btn);
+      return;
+    }
+
+    listaTabuladores.innerHTML = "";
+    ids.forEach(function(id){
+      const t = tabuladoresCache[id];
+      const com = t.comisiones || {};
+
+      const card = document.createElement("div");
+      card.className = "tabuladorCard";
+
+      const cab = document.createElement("div");
+      cab.className = "cabT";
+      cab.innerHTML = '<span class="nomT">' + (t.nombre || id) + '</span><span class="flechaT">Editar ▾</span>';
+      cab.addEventListener("click", function(){ card.classList.toggle("abierto"); });
+      card.appendChild(cab);
+
+      const cuerpo = document.createElement("div");
+      cuerpo.className = "cuerpoT";
+
+      SERVICIOS_CATALOGO.forEach(function(s){
+        const fila = document.createElement("div");
+        fila.className = "filaServT";
+
+        const nom = document.createElement("div");
+        nom.className = "nomServT";
+        nom.textContent = s.n;
+
+        const inp = document.createElement("input");
+        inp.type = "number";
+        inp.min = "0";
+        inp.inputMode = "numeric";
+        inp.dataset.serv = s.id;
+        inp.placeholder = "—";
+        if(com[s.id] !== undefined) inp.value = com[s.id];
+
+        fila.appendChild(nom);
+        fila.appendChild(inp);
+        cuerpo.appendChild(fila);
+      });
+
+      const nota = document.createElement("div");
+      nota.className = "msgT";
+      nota.textContent = "Deja en blanco un servicio que este tabulador NO ofrece.";
+      cuerpo.appendChild(nota);
+
+      const btnG = document.createElement("button");
+      btnG.className = "btnGuardarT";
+      btnG.textContent = "Guardar " + (t.nombre || id);
+      const msgG = document.createElement("div");
+      msgG.className = "msgT";
+
+      btnG.addEventListener("click", async function(){
+        const nuevas = {};
+        cuerpo.querySelectorAll("input[data-serv]").forEach(function(inp){
+          const v = inp.value.trim();
+          if(v !== "" && !isNaN(Number(v))) nuevas[inp.dataset.serv] = Number(v);
+        });
+        btnG.disabled = true;
+        msgG.style.color = "#9a9a9a";
+        msgG.textContent = "Guardando...";
+        try{
+          await setDoc(doc(db, "tabuladores", id), { comisiones: nuevas }, { merge:true });
+          msgG.style.color = "#4caf50";
+          msgG.textContent = "Guardado ✓";
+        } catch(err){
+          msgG.style.color = "#e05c5c";
+          msgG.textContent = "Error: " + err.message;
+        }
+        btnG.disabled = false;
+      });
+
+      cuerpo.appendChild(btnG);
+      cuerpo.appendChild(msgG);
+      card.appendChild(cuerpo);
+      listaTabuladores.appendChild(card);
+    });
+  }
+
+  // Siembra inicial (una sola vez): crea los 3 tabuladores en Firestore
+  let sembrando = false;
+  async function sembrarTabuladores(){
+    if(sembrando) return;
+    sembrando = true;
+    msgTabuladores.style.color = "#9a9a9a";
+    msgTabuladores.textContent = "Creando tabuladores...";
+    try{
+      const batch = writeBatch(db);
+      Object.keys(TABULADORES_SEMILLA).forEach(function(id){
+        batch.set(doc(db, "tabuladores", id), TABULADORES_SEMILLA[id]);
+      });
+      await batch.commit();
+      msgTabuladores.style.color = "#4caf50";
+      msgTabuladores.textContent = "Tabuladores creados ✓";
+    } catch(err){
+      msgTabuladores.style.color = "#e05c5c";
+      msgTabuladores.textContent = "Error: " + err.message;
+    }
+    sembrando = false;
+  }
+
+  // Escuchar tabuladores en tiempo real
+  onSnapshot(collection(db, "tabuladores"), function(snap){
+    const cache = {};
+    snap.forEach(function(d){
+      const data = d.data() || {};
+      cache[d.id] = {
+        nombre: data.nombre || d.id,
+        orden: data.orden || 99,
+        comisiones: data.comisiones || {}
+      };
+    });
+    tabuladoresCache = cache;
+    renderTabuladores();
+    refrescarSelectsTabulador();
+  }, function(err){ mostrarError(err); });
+
   async function crearBarberosIniciales(){
     if(creandoBarberos) return;
     creandoBarberos = true;
@@ -4246,7 +4567,10 @@
       const sub = document.createElement("div");
       sub.className = "subG";
       const descansoTexto = (b.descanso && b.descanso.length > 0) ? b.descanso.join(", ") : "variable";
-      sub.textContent = "PIN: " + b.pin + " · Descanso: " + descansoTexto;
+      const tabNombre = b.metodoPago && tabuladoresCache[b.metodoPago]
+        ? tabuladoresCache[b.metodoPago].nombre
+        : (b.metodoPago ? b.metodoPago : "sin asignar");
+      sub.textContent = "PIN: " + b.pin + " · Tabulador: " + tabNombre + " · Descanso: " + descansoTexto;
 
       datos.appendChild(nom);
       datos.appendChild(sub);
@@ -4292,6 +4616,7 @@
   // ----- Agregar barbero -----
   const agregarNombre     = document.getElementById("agregarNombre");
   const agregarPin        = document.getElementById("agregarPin");
+  const agregarMetodo     = document.getElementById("agregarMetodo");
   const agregarBtn        = document.getElementById("agregarBtn");
   const agregarMsg        = document.getElementById("agregarMsg");
   let agregando = false;
@@ -4320,6 +4645,12 @@
       agregarMsg.textContent = "Ese PIN ya lo usa otro barbero";
       return;
     }
+    const metodoPago = agregarMetodo ? agregarMetodo.value : "";
+    if(!metodoPago){
+      agregarMsg.style.color = "#e05c5c";
+      agregarMsg.textContent = "Elige un tabulador de pago";
+      return;
+    }
 
     agregando = true;
     agregarBtn.disabled = true;
@@ -4336,6 +4667,7 @@
         num: nuevoNum,
         nombre: nombre,
         porcentaje: 0,
+        metodoPago: metodoPago,
         pin: pin,
         vip: false,
         confirmarCita: false,
@@ -4379,6 +4711,7 @@
   const editTitulo        = document.getElementById("editTitulo");
   const editNombre        = document.getElementById("editNombre");
   const editPin           = document.getElementById("editPin");
+  const editMetodo        = document.getElementById("editMetodo");
   const editDias          = document.getElementById("editDias");
   const editGuardar       = document.getElementById("editGuardar");
   const editCancelar      = document.getElementById("editCancelar");
@@ -4392,6 +4725,13 @@
     editTitulo.textContent = "Editar Barbero " + b.num;
     editNombre.value = b.nombre || "";
     editPin.value = b.pin;
+    // Asegurar que el select tenga las opciones actuales y marcar el suyo
+    if(editMetodo){
+      editMetodo.innerHTML = opcionesTabulador();
+      if(b.metodoPago && editMetodo.querySelector('option[value="' + b.metodoPago + '"]')){
+        editMetodo.value = b.metodoPago;
+      }
+    }
     editDias.querySelectorAll(".btnDia").forEach(function(btn){
       const activo = (b.descanso || []).includes(btn.dataset.dia);
       btn.classList.toggle("activo", activo);
@@ -4441,14 +4781,16 @@
     editMsg.textContent = "Guardando...";
 
     try{
-      await updateDoc(doc(db, "barberos", barberoEditando.id), {
+      const cambios = {
         nombre: editNombre.value.trim(),
         pin: pin,
         vip: false,
         confirmarCita: !!barberoEditando.confirmarCita,
         descanso: descanso,
         transferencia: deleteField() // limpia el campo viejo si existía
-      });
+      };
+      if(editMetodo && editMetodo.value) cambios.metodoPago = editMetodo.value;
+      await updateDoc(doc(db, "barberos", barberoEditando.id), cambios);
       modalEditar.classList.remove("abierto");
       barberoEditando = null;
     } catch(err){
