@@ -2441,13 +2441,16 @@
     detalle.textContent = "Detalle del error: " + err.message;
   }
 
-  try{
-    await getDocs(collection(db, "ajustes"));
-    punto.classList.add("ok");
-    texto.textContent = "conectado";
-  } catch(err){
-    mostrarError(err);
-  }
+  (async function probarConexion(){
+    await authListo; // esperar sesión + token maestra antes de leer
+    try{
+      await getDocs(collection(db, "ajustes"));
+      punto.classList.add("ok");
+      texto.textContent = "conectado";
+    } catch(err){
+      mostrarError(err);
+    }
+  })();
 
   // ============================================================
   // UTILIDADES
