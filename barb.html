@@ -668,6 +668,13 @@
     getFirestore, collection, getDocs, doc, getDoc, addDoc, deleteDoc,
     query, where, onSnapshot, serverTimestamp
   } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  import {
+    getAuth, setPersistence, browserLocalPersistence,
+    onAuthStateChanged, signInWithCustomToken, signOut
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import {
+    getFunctions, httpsCallable
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js";
 
   // ##############################################################
   // #                                                            #
@@ -692,6 +699,25 @@
 
   const app = initializeApp(CONFIG.firebase);
   const db  = getFirestore(app);
+  const auth = getAuth(app);
+  const functions = getFunctions(app);
+  const loginBarberoFn = httpsCallable(functions, "loginBarbero");
+
+  // Persistencia local: la sesión de Firebase Auth se recuerda en
+  // este dispositivo hasta que el barbero cierre sesión o caduque.
+  setPersistence(auth, browserLocalPersistence);
+
+  // authListo resuelve cuando onAuthStateChanged confirma el estado
+  // inicial (haya o no sesión). Sirve para no confiar en el
+  // localStorage de sesión hasta que Firebase Auth haya restaurado
+  // (o no) una sesión real.
+  let usuarioAuth = null;
+  let resolverAuthListo;
+  const authListo = new Promise(function(resolve){ resolverAuthListo = resolve; });
+  onAuthStateChanged(auth, function(user){
+    usuarioAuth = user;
+    resolverAuthListo();
+  });
 
   // ----- Fechas -----
   function fechaHoy(){
@@ -772,6 +798,8 @@
     if(pararClientes){ pararClientes(); pararClientes = null; }
     if(pararPendientes){ pararPendientes(); pararPendientes = null; }
     barberoActual = null;
+    // Cerrar también la sesión de Firebase Auth (el custom token).
+    signOut(auth).catch(function(){ /* sin sesión que cerrar, ok */ });
     pantallaBarbero.style.display = "none";
     pantallaPin.style.display = "flex";
     limpiarPin();
@@ -782,12 +810,18 @@
   // ============================================================
   // ENTRAR: cargar datos del barbero y arrancar su pantalla
   // ============================================================
-  async function entrarComoBarbero(num){
-    const s = await getDoc(doc(db, "barberos", String(num)));
-    if(!s.exists() || s.data().activo === false){
+  // Recibe los datos del barbero que ya trajo la Cloud Function
+  // (o los reconstruidos desde la sesión guardada). NO lee Firestore:
+  // la colección "barberos" solo se toca del lado del servidor.
+  async function entrarComoBarbero(datos){
+    if(!datos || datos.num === undefined || datos.num === null){
       return false;
     }
-    barberoActual = { id: s.id, ...s.data() };
+    barberoActual = {
+      num: datos.num,
+      nombre: datos.nombre,
+      metodoPago: datos.metodoPago
+    };
 
     nombreBarberoEl.textContent = barberoActual.nombre || ("Barbero " + barberoActual.num);
     pantallaPin.style.display = "none";
@@ -1358,30 +1392,34 @@
     msgPin.textContent = "Verificando...";
 
     try{
-      // Buscar barbero activo con ese PIN
-      const consulta = query(collection(db, "barberos"), where("pin", "==", pinActual));
-      const res = await getDocs(consulta);
+      // El PIN se valida en el SERVIDOR (Cloud Function loginBarbero).
+      // Nunca leemos la colección "barberos" desde el navegador.
+      const resp = await loginBarberoFn({ pin: pinActual });
+      const datos = resp.data; // { token, num, nombre, metodoPago }
 
-      let encontrado = null;
-      res.forEach(function(d){
-        const b = d.data();
-        if(b.activo !== false && encontrado === null) encontrado = b;
+      // Iniciar sesión de Firebase Auth con el custom token que
+      // devolvió la function (trae el claim barberoNum).
+      await signInWithCustomToken(auth, datos.token);
+
+      // Guardar sesión local y entrar con los datos que ya trajo la
+      // function (entrarComoBarbero ya no vuelve a leer Firestore).
+      guardarSesion(datos.num);
+      await entrarComoBarbero({
+        num: datos.num,
+        nombre: datos.nombre,
+        metodoPago: datos.metodoPago
       });
-
-      if(encontrado){
-        guardarSesion(encontrado.num);
-        await entrarComoBarbero(encontrado.num);
-        limpiarPin();
-      } else {
-        puntosPin.classList.add("error");
-        msgPin.style.color = "#e05c5c";
-        msgPin.textContent = "PIN incorrecto";
-        setTimeout(limpiarPin, 900);
-      }
+      limpiarPin();
     } catch(err){
+      puntosPin.classList.add("error");
       msgPin.style.color = "#e05c5c";
-      msgPin.textContent = "Error de conexión: " + err.message;
-      setTimeout(limpiarPin, 1500);
+      // La function manda "PIN incorrecto" o "PIN duplicado, avisa a
+      // recepción" como mensaje; Firebase lo entrega en err.message.
+      const codigo = err && err.code ? err.code : "";
+      let texto = err && err.message ? err.message : "Error de conexión";
+      if(codigo === "functions/permission-denied") texto = "PIN incorrecto";
+      msgPin.textContent = texto;
+      setTimeout(limpiarPin, 1200);
     }
 
     validandoPin = false;
@@ -1413,16 +1451,54 @@
   });
 
   // ============================================================
-  // ARRANQUE: si hay sesión viva, entrar directo
+  // ARRANQUE: entrar directo SOLO si hay sesión local válida Y
+  // Firebase Auth restauró una sesión real (con el claim del
+  // barbero). Si falta cualquiera de las dos, se pide el PIN.
   // ============================================================
-  const sesion = leerSesion();
-  if(sesion){
-    entrarComoBarbero(sesion.num).then(function(ok){
-      if(!ok) cerrarSesion(); // barbero dado de baja o inexistente
-    }).catch(function(err){
-      mostrarError(err);
-    });
-  }
+  (async function arranque(){
+    const sesion = leerSesion();
+    if(!sesion) return; // no hay sesión local → se queda en la pantalla de PIN
+
+    // Esperar a que Firebase Auth confirme si hay sesión restaurada.
+    await authListo;
+
+    // Sin sesión real de Auth (p.ej. sesión vieja de antes de este
+    // cambio, o expirada) → limpiar y pedir PIN de nuevo.
+    if(!usuarioAuth){
+      cerrarSesion();
+      return;
+    }
+
+    // Verificar que el token corresponda al barbero de la sesión local.
+    let numToken = null;
+    try{
+      const t = await usuarioAuth.getIdTokenResult();
+      numToken = t.claims && t.claims.barberoNum;
+    } catch(e){ /* token ilegible */ }
+
+    if(numToken === null || numToken === undefined || Number(numToken) !== Number(sesion.num)){
+      cerrarSesion();
+      return;
+    }
+
+    // Reconstruir nombre/metodoPago leyendo el PROPIO doc del barbero
+    // (lectura acotada permitida por las reglas: el barbero lee lo suyo).
+    let nombre = "Barbero " + sesion.num;
+    let metodoPago = null;
+    try{
+      const s = await getDoc(doc(db, "barberos", String(sesion.num)));
+      if(s.exists()){
+        const b = s.data();
+        if(b.activo === false){ cerrarSesion(); return; }
+        nombre = b.nombre || nombre;
+        metodoPago = b.metodoPago || null;
+      }
+    } catch(e){ /* si falla la lectura, entra con datos mínimos */ }
+
+    entrarComoBarbero({ num: sesion.num, nombre: nombre, metodoPago: metodoPago })
+      .then(function(ok){ if(!ok) cerrarSesion(); })
+      .catch(function(err){ mostrarError(err); });
+  })();
 </script>
 
 </body>
