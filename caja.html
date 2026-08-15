@@ -2097,6 +2097,9 @@
     getFirestore, collection, getDocs, getDoc, addDoc, setDoc, doc, updateDoc, deleteField, deleteDoc,
     query, where, onSnapshot, serverTimestamp, writeBatch, arrayUnion
   } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  import {
+    getAuth, setPersistence, browserLocalPersistence, onAuthStateChanged, signInWithEmailAndPassword
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
   // ##############################################################
   // #                                                            #
@@ -2129,6 +2132,67 @@
   const db  = getFirestore(app);
   window.db = db;
 
+  // ============================================================
+  // ===== CUENTA MAESTRA (Firebase Auth) — login invisible =====
+  // MASTER_EMAIL no es secreto (es solo el usuario). La contraseña
+  // NUNCA se escribe aquí: se teclea una sola vez en este dispositivo
+  // y Firebase guarda la sesión localmente (no hay que repetirlo).
+  // ============================================================
+  const MASTER_EMAIL = "sis.bar01+joss-caja@gmail.com";
+  const auth = getAuth(app);
+
+  let resolverAuthListo;
+  const authListo = new Promise(function(resolve){ resolverAuthListo = resolve; });
+
+  function onSnapshotSeguro(ref, cb, cbErr){
+    let real = null;
+    authListo.then(function(){
+      real = cbErr ? onSnapshot(ref, cb, cbErr) : onSnapshot(ref, cb);
+    });
+    return function(){ if(real) real(); };
+  }
+
+  const loginOverlay   = document.createElement("div");
+  loginOverlay.innerHTML =
+    '<div style="position:fixed;inset:0;background:#111a;z-index:99999;display:flex;align-items:center;justify-content:center;font-family:inherit;">' +
+      '<div style="background:#fff;border-radius:14px;padding:28px 26px;max-width:320px;width:90%;box-shadow:0 10px 40px #0006;">' +
+        '<h3 style="margin:0 0 14px;font-size:18px;">Conectar Caja (una sola vez)</h3>' +
+        '<p style="margin:0 0 14px;font-size:13px;color:#555;">Este dispositivo no tiene sesión guardada. Pide la contraseña maestra al administrador.</p>' +
+        '<input id="masterPassInput" type="password" placeholder="Contraseña maestra" style="width:100%;padding:10px;margin-bottom:10px;border:1px solid #ccc;border-radius:8px;box-sizing:border-box;">' +
+        '<div id="masterPassMsg" style="color:#c00;font-size:12px;min-height:16px;margin-bottom:8px;"></div>' +
+        '<button id="masterPassBtn" style="width:100%;padding:10px;border:0;border-radius:8px;background:#111;color:#fff;font-size:14px;cursor:pointer;">Conectar</button>' +
+      '</div>' +
+    '</div>';
+  document.body.appendChild(loginOverlay);
+  loginOverlay.style.display = "none";
+
+  function mostrarOverlayMaestro(){
+    loginOverlay.style.display = "flex";
+    const inp = document.getElementById("masterPassInput");
+    const btn = document.getElementById("masterPassBtn");
+    const msg = document.getElementById("masterPassMsg");
+    function intentar(){
+      msg.textContent = "";
+      signInWithEmailAndPassword(auth, MASTER_EMAIL, inp.value).catch(function(){
+        msg.textContent = "Contraseña incorrecta";
+        inp.value = "";
+      });
+    }
+    btn.onclick = intentar;
+    inp.onkeydown = function(e){ if(e.key === "Enter") intentar(); };
+  }
+
+  setPersistence(auth, browserLocalPersistence).then(function(){
+    onAuthStateChanged(auth, function(user){
+      if(user){
+        loginOverlay.style.display = "none";
+        resolverAuthListo();
+      } else {
+        mostrarOverlayMaestro();
+      }
+    });
+  });
+
   // Contraseñas (se pueden cambiar desde Admin y quedan guardadas
   // en ajustes/config, que sobrescribe estos valores por defecto)
   let PASS_CAJA  = CONFIG.passCaja;
@@ -2136,6 +2200,7 @@
   let PASS_HIST  = CONFIG.passHist; // contraseña especial del historial
 
   async function cargarConfig(){
+    await authListo;
     try{
       const s = await getDoc(doc(db, "ajustes", "config"));
       if(s.exists()){
@@ -2860,7 +2925,7 @@
     });
   }
 
-  onSnapshot(query(collection(db, "notas"), where("fecha", "==", fechaHoy())), function(snap){
+  onSnapshotSeguro(query(collection(db, "notas"), where("fecha", "==", fechaHoy())), function(snap){
     notasHoyCache = [];
     snap.forEach(function(d){ notasHoyCache.push({ id: d.id, ...d.data() }); });
     notasHoyCache.sort(function(a, b){
@@ -3260,7 +3325,7 @@
   const listaMovimientos = document.getElementById("listaMovimientos");
   const totalMovimientos = document.getElementById("totalMovimientos");
 
-  onSnapshot(query(collection(db, "movimientos"), where("fecha", "==", fechaHoy())), function(snap){
+  onSnapshotSeguro(query(collection(db, "movimientos"), where("fecha", "==", fechaHoy())), function(snap){
     const movs = [];
     snap.forEach(function(d){ movs.push({ id: d.id, ...d.data() }); });
 
@@ -3595,7 +3660,7 @@
     });
   });
 
-  onSnapshot(collection(db, "pendientes"), function(snap){
+  onSnapshotSeguro(collection(db, "pendientes"), function(snap){
     const pendientes = [];
     snap.forEach(function(d){ pendientes.push({ id: d.id, ...d.data() }); });
 
@@ -3670,7 +3735,7 @@
   // ============================================================
   // COBROS DE HOY (tiempo real) → tarjetas, columnas y admin
   // ============================================================
-  onSnapshot(query(collection(db, "tickets"), where("fecha", "==", fechaHoy())), function(snap){
+  onSnapshotSeguro(query(collection(db, "tickets"), where("fecha", "==", fechaHoy())), function(snap){
     const cobros = [];
     snap.forEach(function(d){ cobros.push({ id: d.id, ...d.data() }); });
 
@@ -3957,7 +4022,7 @@
 
   // Bonos, multas y extras de la semana actual (colección "nomina")
   let itemsSemanaActual = [];
-  onSnapshot(query(collection(db, "nomina"), where("semana", "==", SEMANA[0])), function(snap){
+  onSnapshotSeguro(query(collection(db, "nomina"), where("semana", "==", SEMANA[0])), function(snap){
     itemsSemanaActual = [];
     snap.forEach(function(d){
       const x = d.data();
@@ -3968,7 +4033,7 @@
 
   // Pagos de nómina marcados esta semana (colección "pagos")
   let pagosSemanaActual = {};
-  onSnapshot(query(collection(db, "pagos"), where("semana", "==", SEMANA[0])), function(snap){
+  onSnapshotSeguro(query(collection(db, "pagos"), where("semana", "==", SEMANA[0])), function(snap){
     pagosSemanaActual = {};
     snap.forEach(function(d){
       const p = d.data();
@@ -3991,7 +4056,7 @@
   const GASTO_LIMPIEZA_DEFAULT = 1500;
   let diasRecepcionSemanaActual = 0;
   let gastoLimpiezaSemanaActual = GASTO_LIMPIEZA_DEFAULT;
-  onSnapshot(doc(db, "nomina", "config-" + SEMANA[0]), function(s){
+  onSnapshotSeguro(doc(db, "nomina", "config-" + SEMANA[0]), function(s){
     diasRecepcionSemanaActual = (s.exists() && s.data().diasRecepcion) ? s.data().diasRecepcion : 0;
     gastoLimpiezaSemanaActual = (s.exists() && typeof s.data().gastoLimpieza === "number")
                                   ? s.data().gastoLimpieza : GASTO_LIMPIEZA_DEFAULT;
@@ -4014,7 +4079,7 @@
   let ticketsSemana = [];
   let movsSemana = [];
 
-  onSnapshot(
+  onSnapshotSeguro(
     query(collection(db, "tickets"), where("fecha", ">=", SEMANA[0]), where("fecha", "<=", SEMANA[6])),
     function(snap){
       ticketsSemana = [];
@@ -4024,7 +4089,7 @@
     function(err){ mostrarError(err); }
   );
 
-  onSnapshot(
+  onSnapshotSeguro(
     query(collection(db, "movimientos"), where("fecha", ">=", SEMANA[0]), where("fecha", "<=", SEMANA[6])),
     function(snap){
       movsSemana = [];
@@ -4487,7 +4552,7 @@
   }
 
   // Escuchar tabuladores en tiempo real
-  onSnapshot(collection(db, "tabuladores"), function(snap){
+  onSnapshotSeguro(collection(db, "tabuladores"), function(snap){
     const cache = {};
     snap.forEach(function(d){
       const data = d.data() || {};
@@ -4689,7 +4754,7 @@
   });
 
   // ----- Escuchar barberos en tiempo real -----
-  onSnapshot(collection(db, "barberos"), function(snap){
+  onSnapshotSeguro(collection(db, "barberos"), function(snap){
     const barberos = [];
     snap.forEach(function(d){ barberos.push({ id: d.id, ...d.data() }); });
     barberos.sort(function(a, b){ return a.num - b.num; });
