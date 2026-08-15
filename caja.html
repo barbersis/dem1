@@ -2186,7 +2186,16 @@
     onAuthStateChanged(auth, function(user){
       if(user){
         loginOverlay.style.display = "none";
-        resolverAuthListo();
+        // Forzar token FRESCO para traer el claim rol:"maestra"
+        // (un token cacheado de antes del claim no lo incluiría, y
+        //  las reglas de Firestore rechazarían a la caja).
+        user.getIdToken(true).then(function(){
+          resolverAuthListo();
+        }).catch(function(){
+          // Si falla el refresh, resolvemos igual para no bloquear
+          // la caja; el token se refrescará solo en el próximo ciclo.
+          resolverAuthListo();
+        });
       } else {
         mostrarOverlayMaestro();
       }
