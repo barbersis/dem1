@@ -145,6 +145,44 @@
     .ahora-line { position:absolute; left:0; right:0; height:0; border-top:2px solid #ef4444; z-index:15; pointer-events:none; }
     .ahora-dot { position:absolute; left:-4px; top:-4px; width:8px; height:8px; border-radius:50%; background:#ef4444; }
 
+    /* Capa 2: columna clicable para agendar, cita clicable para editar */
+    .body-col.clicable { cursor:pointer; }
+    .body-col.clicable:hover { background:#faf9ff; }
+    .cita { cursor:pointer; transition:filter .1s; }
+    .cita:hover { filter:brightness(0.96); }
+
+    /* chip de override "no trabaja hoy" en cabecera */
+    .ov-chip {
+      margin-top:2px; font-size:10px; font-weight:700; padding:2px 8px; border-radius:20px;
+      border:1px solid var(--border-strong); background:var(--surface); color:var(--text-muted);
+      cursor:pointer; white-space:nowrap;
+    }
+    .ov-chip:hover { background:var(--surface-2); }
+    .ov-chip.off { background:#fde8e8; border-color:#f3b8b8; color:#c0392b; }
+    .ov-chip.domingo { cursor:default; background:var(--surface-2); color:var(--text-faint); }
+
+    /* Modal de cita (agendar / editar) */
+    #citaModal { position:fixed; inset:0; background:#0007; z-index:9990; display:none; align-items:center; justify-content:center; padding:16px; }
+    #citaModal .box { background:#fff; border-radius:16px; padding:24px; max-width:380px; width:100%; box-shadow:var(--shadow-lg); max-height:90vh; overflow-y:auto; }
+    #citaModal h3 { margin:0 0 4px; font-size:17px; }
+    #citaModal .modal-sub { font-size:12.5px; color:var(--text-faint); margin-bottom:16px; }
+    #citaModal label { display:block; font-size:12px; font-weight:700; color:var(--text-muted); margin:12px 0 4px; }
+    #citaModal input, #citaModal select, #citaModal textarea {
+      width:100%; padding:10px; border:1px solid var(--border-strong); border-radius:9px; box-sizing:border-box; font-size:14px; font-family:var(--font);
+    }
+    #citaModal .fila2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    #citaModal .msg { font-size:12.5px; min-height:18px; margin-top:10px; padding:8px 10px; border-radius:8px; }
+    #citaModal .msg.error { background:#fde8e8; color:#c0392b; }
+    #citaModal .msg.ok { background:#d9f5ec; color:#0d7d5e; }
+    #citaModal .acciones { display:flex; gap:8px; margin-top:18px; }
+    #citaModal .acciones button { flex:1; padding:11px; border:0; border-radius:9px; font-size:13.5px; font-weight:700; cursor:pointer; }
+    #citaModal .btn-guardar { background:var(--accent); color:#fff; }
+    #citaModal .btn-cancelar { background:var(--surface-2); color:var(--text-muted); border:1px solid var(--border) !important; }
+    #citaModal .btn-eliminar { background:#fde8e8; color:#c0392b; flex:0 0 auto; padding:11px 16px; }
+    #citaModal .origen-badge { display:inline-block; font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:20px; margin-left:6px; vertical-align:middle; }
+    #citaModal .origen-badge.web { background:#dbeafe; color:#2563eb; }
+    #citaModal .origen-badge.recepcion { background:#d9f5ec; color:#0d7d5e; }
+
     /* ---------- Panel de avisos ---------- */
     .avisos-panel {
       position:fixed; top:0; right:0; bottom:0; width:min(340px, 90vw); background:var(--surface);
@@ -266,8 +304,6 @@
     <div class="box">
       <h3>Cambiar clave de acceso</h3>
       <p>Esta es la clave que recepción teclea para entrar a la agenda.</p>
-      <label>Clave actual</label>
-      <input id="claveActual" type="password" placeholder="Clave actual" />
       <label>Clave nueva</label>
       <input id="claveNueva" type="password" placeholder="Nueva clave" />
       <label>Repetir clave nueva</label>
@@ -276,6 +312,45 @@
       <div class="acciones">
         <button class="btn-cancelar" onclick="cerrarCambiarClave()">Cancelar</button>
         <button class="btn-guardar" onclick="guardarClaveNueva()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal de cita: agendar nueva / editar existente (Capa 2) -->
+  <div id="citaModal">
+    <div class="box">
+      <h3 id="citaModalTitulo">Nueva cita</h3>
+      <div class="modal-sub" id="citaModalSub"></div>
+
+      <label>Cliente</label>
+      <input id="c-nombre" type="text" placeholder="Nombre del cliente" />
+
+      <label>Teléfono <span style="font-weight:400;color:#aaa;">(opcional)</span></label>
+      <input id="c-telefono" type="tel" placeholder="10 dígitos" inputmode="numeric" />
+
+      <label>Servicio</label>
+      <select id="c-servicio" onchange="onCambioServicioModal()"></select>
+
+      <div class="fila2">
+        <div>
+          <label>Barbero</label>
+          <select id="c-barbero"></select>
+        </div>
+        <div>
+          <label>Hora</label>
+          <input id="c-hora" type="time" step="300" />
+        </div>
+      </div>
+
+      <label>Nota <span style="font-weight:400;color:#aaa;">(opcional)</span></label>
+      <textarea id="c-comentario" rows="2" placeholder="Comentario interno"></textarea>
+
+      <div class="msg" id="citaModalMsg"></div>
+
+      <div class="acciones">
+        <button class="btn-cancelar" onclick="cerrarCitaModal()">Cancelar</button>
+        <button class="btn-eliminar" id="c-btn-eliminar" onclick="eliminarCitaActual()" style="display:none">Eliminar</button>
+        <button class="btn-guardar" onclick="guardarCita()">Guardar</button>
       </div>
     </div>
   </div>
@@ -294,7 +369,7 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
   import {
-    getFirestore, collection, onSnapshot, query, where, doc, getDoc, setDoc
+    getFirestore, collection, onSnapshot, query, where, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc
   } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
   import {
     getAuth, setPersistence, browserLocalPersistence, onAuthStateChanged, signInWithEmailAndPassword
@@ -534,11 +609,20 @@
     const cols = `var(--eje-w) repeat(${BARBEROS.length}, minmax(var(--col-min-w), 1fr))`;
     head.style.gridTemplateColumns = cols;
     let html = '<div class="head-eje"></div>';
+    const domingo = esDomingo();
     BARBEROS.forEach(b => {
       const col = colorBarbero(b.nombre);
+      let chip;
+      if (domingo){
+        chip = `<div class="ov-chip domingo">Domingo</div>`;
+      } else {
+        const off = !!(overridesMap[b.nombre] && overridesMap[b.nombre].trabaja === false);
+        chip = `<div class="ov-chip${off?' off':''}" onclick="toggleOverride('${b.nombre.replace(/'/g,"\\'")}')">${off?'No trabaja hoy':'Trabaja hoy'}</div>`;
+      }
       html += `<div class="head-barbero">
         <div class="head-avatar" style="background:${col}">${iniciales(b.nombre)}</div>
         <div class="head-nombre">${b.nombre}</div>
+        ${chip}
       </div>`;
     });
     head.innerHTML = html;
@@ -571,7 +655,10 @@
     let colsHtml = '';
     const dia = fechaActual.getDay();
     BARBEROS.forEach(b => {
-      let c = `<div class="body-col" style="height:${altoTotal}px">`;
+      const puedeAgendar = !noTrabajaHoy(b);
+      const nombreEsc = b.nombre.replace(/'/g,"\\'");
+      const clickCol = puedeAgendar ? ` onclick="clickColumna(event,'${nombreEsc}')"` : '';
+      let c = `<div class="body-col${puedeAgendar?' clicable':''}" style="height:${altoTotal}px"${clickCol}>`;
       // líneas guía cada 10 min (hora / media hora / 10min con estilos distintos)
       for (let m = APERTURA_MIN; m <= CIERRE_VISUAL_MIN; m += 10){
         const top = (m - APERTURA_MIN) * PX_POR_MIN;
@@ -591,7 +678,7 @@
           const esWeb = cita.origen === 'reserva-web';
           const cls = esWeb ? 'web' : 'normal';
           const tag = esWeb ? '🌐' : '🏠';
-          c += `<div class="cita ${cls}" style="top:${top}px;height:${alto}px">
+          c += `<div class="cita ${cls}" style="top:${top}px;height:${alto}px" onclick="event.stopPropagation();abrirEditarCita('${cita.id}')">
             <span class="cita-tag">${tag}</span>
             <div class="cita-rango">${min12hr(ini)} – ${min12hr(ini+dur)}</div>
             <div class="cita-nombre">${cita.nombre||''}</div>
@@ -641,11 +728,200 @@
   window.cambiarDia = function(delta){ fechaActual.setDate(fechaActual.getDate()+delta); recargarDia(); };
   window.irHoy = function(){ fechaActual = new Date(); fechaActual.setHours(0,0,0,0); recargarDia(); };
 
+  // ============================================================
+  //   CAPA 2 — agendar / editar / eliminar citas + overrides
+  // ============================================================
+
+  // ---- Servicios: escucha viva (público, sin filtro por sesión) ----
+  let SERVICIOS = [];
+  let unsubServicios = null;
+  function escucharServicios(){
+    if (unsubServicios) unsubServicios();
+    unsubServicios = onSnapshotSeguro(collection(db,'servicios'), snap => {
+      SERVICIOS = snap.docs.map(d => ({ id:d.id, ...d.data() }))
+        .filter(s => s.activo !== false)
+        .sort((a,b) => (a.orden||0)-(b.orden||0));
+    });
+  }
+
+  // ---- Detección de empalme (minutos reales, mismo barbero, mismo día) ----
+  function buscarEmpalme(barbero, iniMin, durMin, excluirId){
+    const finMin = iniMin + durMin;
+    return citas.find(c => {
+      if (c.barbero !== barbero) return false;
+      if (excluirId && c.id === excluirId) return false;
+      const cIni = slotToMin(c.slot);
+      const cFin = cIni + durCita(c);
+      return cIni < finMin && iniMin < cFin; // traslape real en minutos
+    }) || null;
+  }
+
+  // ---- Click en columna vacía → nueva cita en la hora tocada ----
+  window.clickColumna = function(event, barbero){
+    const rect = event.currentTarget.getBoundingClientRect();
+    const offsetY = event.clientY - rect.top;
+    let minutos = APERTURA_MIN + Math.round(offsetY / PX_POR_MIN);
+    minutos = Math.round(minutos / 5) * 5; // snap a inicios de 5 min
+    minutos = Math.min(Math.max(minutos, APERTURA_MIN), ULTIMO_INICIO_MIN);
+    abrirCitaModal('nueva', { barbero, slot: minToSlot(minutos) });
+  };
+
+  // ---- Click en cita existente → editar ----
+  window.abrirEditarCita = function(id){
+    const cita = citas.find(c => c.id === id);
+    if (!cita) return;
+    abrirCitaModal('editar', cita);
+  };
+
+  // ---- Modal: poblar selects ----
+  function poblarServicios(selectEl, servicioActual){
+    selectEl.innerHTML = '<option value="">Elige un servicio…</option>' +
+      SERVICIOS.map(s => `<option value="${s.nombre}" data-durmin="${s.durMin}" data-exclusivo='${JSON.stringify(s.barberosPermitidos||[])}'>${s.nombre} (${s.durMin} min)</option>`).join('');
+    if (servicioActual){
+      if (!SERVICIOS.some(s => s.nombre === servicioActual)){
+        selectEl.insertAdjacentHTML('beforeend', `<option value="${servicioActual}" data-durmin="30" data-exclusivo="[]">${servicioActual}</option>`);
+      }
+      selectEl.value = servicioActual;
+    }
+  }
+  function filtroDeOpcionServicio(){
+    const sel = document.getElementById('c-servicio');
+    const opt = sel.options[sel.selectedIndex];
+    if (!opt) return [];
+    try { return JSON.parse(opt.dataset.exclusivo || '[]'); } catch(e){ return []; }
+  }
+  function poblarBarberos(selectEl, barberoActual, soloEstos){
+    const lista = (soloEstos && soloEstos.length) ? BARBEROS.filter(b => soloEstos.includes(b.nombre)) : BARBEROS;
+    selectEl.innerHTML = lista.map(b => `<option value="${b.nombre}">${b.nombre}</option>`).join('');
+    if (barberoActual && lista.some(b => b.nombre === barberoActual)) selectEl.value = barberoActual;
+  }
+  window.onCambioServicioModal = function(){
+    const barberoPrevio = document.getElementById('c-barbero').value;
+    poblarBarberos(document.getElementById('c-barbero'), barberoPrevio, filtroDeOpcionServicio());
+  };
+
+  // ---- Abrir / cerrar modal ----
+  let citaEditandoId = null;
+  window.abrirCitaModal = function(modo, datos){
+    citaEditandoId = (modo === 'editar') ? datos.id : null;
+    document.getElementById('citaModalTitulo').textContent = modo === 'editar' ? 'Editar cita' : 'Nueva cita';
+    const fechaTxt = `${DIAS_N[fechaActual.getDay()]} ${fechaActual.getDate()} de ${MESES[fechaActual.getMonth()]}`;
+    const badge = modo === 'editar'
+      ? `<span class="origen-badge ${datos.origen==='reserva-web'?'web':'recepcion'}">${datos.origen==='reserva-web'?'🌐 Web':'🏠 Recepción'}</span>` : '';
+    document.getElementById('citaModalSub').innerHTML = fechaTxt + badge;
+
+    document.getElementById('c-nombre').value = datos.nombre || '';
+    document.getElementById('c-telefono').value = datos.telefono || '';
+    document.getElementById('c-comentario').value = datos.comentario || '';
+    document.getElementById('c-hora').value = datos.slot || '';
+
+    poblarServicios(document.getElementById('c-servicio'), datos.servicio || '');
+    poblarBarberos(document.getElementById('c-barbero'), datos.barbero || '', filtroDeOpcionServicio());
+
+    document.getElementById('c-btn-eliminar').style.display = modo === 'editar' ? 'block' : 'none';
+    const msg = document.getElementById('citaModalMsg'); msg.className = 'msg'; msg.textContent = '';
+    document.getElementById('citaModal').style.display = 'flex';
+    document.getElementById('c-nombre').focus();
+  };
+  window.cerrarCitaModal = function(){ document.getElementById('citaModal').style.display = 'none'; citaEditandoId = null; };
+
+  // ---- Guardar (crear o editar) con validación de empalme ----
+  window.guardarCita = async function(){
+    const msg = document.getElementById('citaModalMsg');
+    msg.className = 'msg'; msg.textContent = '';
+
+    const nombre = document.getElementById('c-nombre').value.trim();
+    const telefono = document.getElementById('c-telefono').value.trim();
+    const comentario = document.getElementById('c-comentario').value.trim();
+    const selServicio = document.getElementById('c-servicio');
+    const servicioNombre = selServicio.value;
+    const durMin = Number(selServicio.options[selServicio.selectedIndex]?.dataset.durmin) || 30;
+    const barbero = document.getElementById('c-barbero').value;
+    const horaStr = document.getElementById('c-hora').value;
+
+    if (!nombre){ msg.className='msg error'; msg.textContent='Falta el nombre del cliente.'; return; }
+    if (!servicioNombre){ msg.className='msg error'; msg.textContent='Elige un servicio.'; return; }
+    if (!barbero){ msg.className='msg error'; msg.textContent='Elige un barbero.'; return; }
+    if (!horaStr){ msg.className='msg error'; msg.textContent='Elige una hora.'; return; }
+
+    const iniMin = slotToMin(horaStr);
+    if (iniMin < APERTURA_MIN || iniMin > ULTIMO_INICIO_MIN){
+      msg.className='msg error';
+      msg.textContent = `La hora debe estar entre ${min12hr(APERTURA_MIN)} y ${min12hr(ULTIMO_INICIO_MIN)} (última cita).`;
+      return;
+    }
+
+    const conflicto = buscarEmpalme(barbero, iniMin, durMin, citaEditandoId);
+    if (conflicto){
+      const cIni = slotToMin(conflicto.slot);
+      msg.className='msg error';
+      msg.textContent = `Se empalma con ${conflicto.nombre} (${min12hr(cIni)}–${min12hr(cIni+durCita(conflicto))}). Elige otra hora o barbero.`;
+      return;
+    }
+
+    const datos = {
+      nombre, telefono, comentario,
+      servicio: servicioNombre, durMin,
+      fecha: getDateKey(fechaActual), slot: horaStr,
+      barbero, tipo: 'normal', confirmado: true
+    };
+
+    try {
+      if (citaEditandoId){
+        await updateDoc(doc(db,'citas',citaEditandoId), datos);
+        showToast('Cita actualizada');
+      } else {
+        await addDoc(collection(db,'citas'), { ...datos, origen:'recepcion', ts: Date.now() });
+        showToast('Cita agendada');
+      }
+      window.cerrarCitaModal();
+    } catch(e){
+      console.error('Error al guardar cita:', e);
+      msg.className='msg error';
+      msg.textContent = 'No se pudo guardar (revisa conexión o permisos).';
+    }
+  };
+
+  // ---- Eliminar ----
+  window.eliminarCitaActual = async function(){
+    if (!citaEditandoId) return;
+    if (!confirm('¿Eliminar esta cita? Esta acción no se puede deshacer.')) return;
+    try {
+      await deleteDoc(doc(db,'citas',citaEditandoId));
+      showToast('Cita eliminada');
+      window.cerrarCitaModal();
+    } catch(e){
+      console.error('Error al eliminar cita:', e);
+      document.getElementById('citaModalMsg').className = 'msg error';
+      document.getElementById('citaModalMsg').textContent = 'No se pudo eliminar (revisa conexión o permisos).';
+    }
+  };
+
+  // ---- Override "no trabaja hoy" (toggle desde la cabecera) ----
+  window.toggleOverride = async function(nombreBarbero){
+    const key = getDateKey(fechaActual);
+    const ref = doc(db, 'overrides', `${nombreBarbero}_${key}`);
+    const offActual = !!(overridesMap[nombreBarbero] && overridesMap[nombreBarbero].trabaja === false);
+    try {
+      if (offActual){
+        await deleteDoc(ref);
+        showToast(`${nombreBarbero}: trabaja hoy`);
+      } else {
+        await setDoc(ref, { barbero: nombreBarbero, fecha: key, trabaja: false });
+        showToast(`${nombreBarbero}: no trabaja hoy`);
+      }
+    } catch(e){
+      console.error('Error al cambiar override:', e);
+      showToast('No se pudo actualizar. Revisa conexión.');
+    }
+  };
+
   // ---- Arranque ----
   // Todas las escuchas usan onSnapshotSeguro (esperan authListo internamente) y
   // se re-disparan solas cuando la sesión queda lista → no hay await bloqueante
   // que pueda dejar la página trabada si la restauración de sesión llega tarde.
   let appIniciada = false;
+  let diaBaseKey = getDateKey(new Date()); // día real al arrancar; para detectar cruce de medianoche
   function init(){
     if (appIniciada) return;
     appIniciada = true;
@@ -654,8 +930,14 @@
     escucharCitas();
     escucharOverrides();
     escucharAvisosWeb();
-    // refrescar "ahora" cada minuto
-    setInterval(() => renderGrid(), 60000);
+    escucharServicios();
+    // Cada minuto: refresca "ahora" y, si cambió el día real (cruce de medianoche
+    // con la pestaña abierta), recalcula la etiqueta Hoy/Mañana/Ayer.
+    setInterval(() => {
+      const hoyKey = getDateKey(new Date());
+      if (hoyKey !== diaBaseKey){ diaBaseKey = hoyKey; actualizarFechaLbl(); }
+      renderGrid();
+    }, 60000);
   }
 
   // ============================================================
@@ -720,21 +1002,19 @@
   // ---- Cambiar clave interna (engrane ⚙️) ----
   window.abrirCambiarClave = function(){
     document.getElementById("cambiarClaveModal").style.display = "flex";
-    document.getElementById("claveActual").value = "";
     document.getElementById("claveNueva").value = "";
     document.getElementById("claveNueva2").value = "";
     document.getElementById("cambiarClaveMsg").textContent = "";
+    document.getElementById("claveNueva").focus();
   };
   window.cerrarCambiarClave = function(){ document.getElementById("cambiarClaveModal").style.display = "none"; };
   window.guardarClaveNueva = async function(){
     const msg = document.getElementById("cambiarClaveMsg");
-    const actual = document.getElementById("claveActual").value;
     const nueva = document.getElementById("claveNueva").value;
     const nueva2 = document.getElementById("claveNueva2").value;
     msg.style.color = "#c00";
-    if (actual !== claveActualCache){ msg.textContent = "La clave actual no es correcta."; return; }
     if (nueva.length < 4){ msg.textContent = "La nueva clave debe tener al menos 4 caracteres."; return; }
-    if (nueva !== nueva2){ msg.textContent = "Las claves nuevas no coinciden."; return; }
+    if (nueva !== nueva2){ msg.textContent = "Las claves no coinciden."; return; }
     try {
       await setDoc(AJUSTES_REF, { claveAcceso: nueva }, { merge: true });
       claveActualCache = nueva;
