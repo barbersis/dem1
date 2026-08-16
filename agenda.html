@@ -234,7 +234,7 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
   import {
-    getFirestore, collection, onSnapshot, query, where, getDocs
+    getFirestore, collection, onSnapshot, query, where
   } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
   import {
     getAuth, setPersistence, browserLocalPersistence, onAuthStateChanged, signInWithEmailAndPassword
@@ -352,13 +352,22 @@
     clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), 2200);
   }
 
-  // ---- Barberos (una sola carga; sin campo 'orden' garantizado → ordenar en JS) ----
-  async function cargarBarberos(){
-    await authListo;
-    const snap = await getDocs(collection(db,'barberos'));
-    BARBEROS = snap.docs.map(d => ({ id:d.id, ...d.data() }))
-      .filter(b => b.activo !== false)
-      .sort((a,b) => (a.orden||0)-(b.orden||0) || (a.nombre||'').localeCompare(b.nombre||''));
+  // ---- Barberos: escucha VIVA (se auto-repara cuando la sesión queda lista;
+  //      sin campo 'orden' garantizado → ordenar en JS) ----
+  let unsubBarberos = null;
+  function escucharBarberos(){
+    if (unsubBarberos) unsubBarberos();
+    unsubBarberos = onSnapshotSeguro(collection(db,'barberos'), snap => {
+      BARBEROS = snap.docs.map(d => ({ id:d.id, ...d.data() }))
+        .filter(b => b.activo !== false)
+        .sort((a,b) => (a.orden||0)-(b.orden||0) || (a.nombre||'').localeCompare(b.nombre||''));
+      const c = document.getElementById('cargando'); if (c) c.remove();
+      renderGrid();
+    }, err => {
+      console.error('Error al cargar barberos:', err);
+      const c = document.getElementById('cargando');
+      if (c) c.textContent = 'No se pudieron cargar los barberos. Recarga la página.';
+    });
   }
 
   // ---- Escuchas dependientes de la fecha ----
@@ -561,17 +570,19 @@
   window.irHoy = function(){ fechaActual = new Date(); fechaActual.setHours(0,0,0,0); recargarDia(); };
 
   // ---- Arranque ----
-  (async function init(){
-    await cargarBarberos();
-    document.getElementById('cargando')?.remove();
+  // Todas las escuchas usan onSnapshotSeguro (esperan authListo internamente) y
+  // se re-disparan solas cuando la sesión queda lista → no hay await bloqueante
+  // que pueda dejar la página trabada si la restauración de sesión llega tarde.
+  function init(){
     actualizarFechaLbl();
-    renderGrid();
+    escucharBarberos();
     escucharCitas();
     escucharOverrides();
     escucharAvisosWeb();
-    // scroll a las 10am (arriba) ya es el default; refrescar "ahora" cada minuto
+    // refrescar "ahora" cada minuto
     setInterval(() => renderGrid(), 60000);
-  })();
+  }
+  init();
 </script>
 </body>
 </html>
