@@ -400,6 +400,18 @@ function renderBarberoChips(){
   const cont = document.getElementById('barbero-chips');
   const toggle = document.getElementById('barbero-toggle');
   if (!selServicio) { cont.innerHTML=''; return; }
+
+  // Servicio exclusivo de UN solo barbero: no hay nada que elegir.
+  // Escondemos el toggle y los chips (incluido "Cualquiera") y solo
+  // avisamos con quién es la cita.
+  const exclusivo = selServicio.barberosPermitidos && selServicio.barberosPermitidos.length === 1;
+  if (exclusivo) {
+    toggle.style.display = 'none';
+    cont.style.display = 'flex';
+    cont.innerHTML = `<div class="barb-chip especial active" style="cursor:default;">Este servicio es con ${selServicio.barberosPermitidos[0]}</div>`;
+    return;
+  }
+
   const candidatos = BARBEROS.filter(b => !selServicio.barberosPermitidos || selServicio.barberosPermitidos.length===0 || selServicio.barberosPermitidos.includes(b.nombre));
   const expandir = barberoExpandido || prefBarbero!=='cualquiera';
 
