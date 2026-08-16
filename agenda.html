@@ -485,11 +485,90 @@ textarea.tbo-campo{ min-height:80px; padding: var(--tbo-e2) var(--tbo-e3); line-
     #cambiarClaveModal .btn-guardar { background:var(--accent); color:#fff; }
     .config-btn { background:none; border:0; cursor:pointer; font-size:18px; color:var(--text-muted); padding:0 4px; }
     .config-btn:hover { color:var(--text); }
+
+    /* ============================================================
+       AJUSTES DE MARCA (16 ago) — topbar oscura con línea bajo el
+       nombre (como el letrero del local), acceso rediseñado, y
+       animaciones de entrada / cambio de día.
+       ============================================================ */
+    @keyframes tboAparece {
+      from { opacity:0; transform: translateY(10px); }
+      to   { opacity:1; transform: translateY(0); }
+    }
+
+    /* ---- Topbar: negro con el brillo ámbar del plafón ---- */
+    .topbar { background: var(--tbo-tinta); border-bottom:none; box-shadow: var(--tbo-cove); color:#F5F5F3; }
+    .brand { display:flex; flex-direction:column; gap:5px; font-weight:400; letter-spacing:normal; white-space:normal; }
+    .brand .tbo-titulo { color:#F5F5F3; }
+    .brand-raya { width:30px; height:1px; background:var(--tbo-ambar); }
+    .brand .sub { font-family: var(--tbo-cuerpo); font-size:10px; text-transform:uppercase; letter-spacing:.18em; color:#A0A5AD; }
+    .nav-btn, .hoy-btn, .avisos-fab { background:transparent; border-color:#3A3E46; color:#D7DAE0; }
+    .nav-btn:hover, .hoy-btn:hover, .avisos-fab:hover { background:#1F2125; color:#fff; }
+    .hoy-btn { border-color:var(--tbo-ambar); color:var(--tbo-ambar); }
+    .fecha-lbl .d1 { color:#F5F5F3; }
+    .fecha-lbl .d2 { color:#9AA0AA; }
+    .config-btn { color:#9AA0AA; }
+    .config-btn:hover { color:#fff; }
+    .avisos-badge { border-color: var(--tbo-tinta); }
+
+    /* ---- Entrada al abrir la app (sesión viva o justo tras la clave) ---- */
+    .tbo-app-entra .topbar { animation: tboAparece .5s ease both; }
+    .tbo-app-entra .cal-wrap { animation: tboAparece .55s ease .08s both; }
+
+    /* ---- Cambio de día: crossfade con leve deslizamiento ---- */
+    .cal-body { transition: opacity .18s ease, transform .22s ease; }
+    .cal-body.dia-saliendo { opacity:0; transform: translateY(6px); }
+    .cal-body.dia-entrando { opacity:0; transform: translateY(-6px); }
+
+    /* ---- Pantalla de acceso: la entrada del local ---- */
+    #accesoOverlay {
+      background:
+        radial-gradient(620px 320px at 50% -12%, rgba(224,161,74,.32), transparent 60%),
+        var(--tbo-tinta);
+      transition: opacity .28s ease;
+    }
+    #accesoOverlay.acceso-sale { opacity:0; }
+    #accesoOverlay .box {
+      background: var(--tbo-sup, #fff);
+      border-radius: var(--tbo-r, 10px);
+      box-shadow: 0 30px 80px rgba(0,0,0,.5);
+      animation: tboAparece .5s ease both;
+    }
+    #accesoOverlay .logo {
+      font-family: var(--tbo-display); font-weight:300; text-transform:uppercase;
+      letter-spacing:.22em; font-size:17px; color: var(--tbo-texto, #16181C);
+    }
+    #accesoOverlay .acceso-raya { width:34px; height:1px; background:var(--tbo-ambar); margin:12px auto; }
+    #accesoOverlay .sub {
+      font-family: var(--tbo-cuerpo); font-size:11px; text-transform:uppercase;
+      letter-spacing:.14em; color: var(--tbo-texto-2, #6B717B);
+    }
+    #accesoOverlay input {
+      border:1px solid var(--tbo-borde-firme, #C7CCD4); border-radius: var(--tbo-r-sm, 6px);
+      font-family: var(--tbo-cifra); letter-spacing:3px;
+    }
+    #accesoOverlay input:focus {
+      outline:none; border-color: var(--tbo-ambar); box-shadow: 0 0 0 3px var(--tbo-ambar-tenue);
+    }
+    #accesoOverlay button {
+      background: var(--tbo-tinta); border-radius: var(--tbo-r-sm, 6px);
+      font-family: var(--tbo-cuerpo); font-weight:500; letter-spacing:.03em;
+    }
+    #accesoOverlay button:hover { background:#000; }
+
+    @media (prefers-reduced-motion: reduce) {
+      .tbo-app-entra .topbar, .tbo-app-entra .cal-wrap, #accesoOverlay .box { animation:none !important; }
+      .cal-body { transition:none !important; }
+    }
   </style>
 </head>
 <body class="tbo">
   <div class="topbar">
-    <div class="brand tbo-titulo tbo-titulo--m">The Barber One <span>· Agenda</span></div>
+    <div class="brand">
+      <div class="tbo-titulo tbo-titulo--m">The Barber One</div>
+      <div class="brand-raya"></div>
+      <div class="sub">Agenda</div>
+    </div>
     <div class="nav-fecha">
       <button class="hoy-btn" onclick="irHoy()">Hoy</button>
       <button class="nav-btn" onclick="cambiarDia(-1)">‹</button>
@@ -529,8 +608,9 @@ textarea.tbo-campo{ min-height:80px; padding: var(--tbo-e2) var(--tbo-e3); line-
   <!-- Pantalla de clave interna (acceso de recepción cada sesión) -->
   <div id="accesoOverlay">
     <div class="box">
-      <div class="logo">The Barber One <span>· Agenda</span></div>
-      <div class="sub">Ingresa la clave de acceso</div>
+      <div class="logo">The Barber One</div>
+      <div class="acceso-raya"></div>
+      <div class="sub">Agenda · Acceso de recepción</div>
       <input id="accesoInput" type="password" placeholder="Clave" inputmode="numeric" />
       <div class="msg" id="accesoMsg"></div>
       <button id="accesoBtn">Entrar</button>
@@ -963,8 +1043,26 @@ textarea.tbo-campo{ min-height:80px; padding: var(--tbo-e2) var(--tbo-e3); line-
     escucharOverrides();
     renderGrid();
   }
-  window.cambiarDia = function(delta){ fechaActual.setDate(fechaActual.getDate()+delta); recargarDia(); };
-  window.irHoy = function(){ fechaActual = new Date(); fechaActual.setHours(0,0,0,0); recargarDia(); };
+  // Anima la transición al cambiar de día: fundido de salida, se recarga el
+  // contenido, y fundido de entrada. No toca el motor de horarios/citas.
+  function transicionDia(cambiarFn){
+    const body = document.getElementById('cal-body');
+    body.classList.add('dia-saliendo');
+    setTimeout(() => {
+      cambiarFn();
+      body.classList.add('dia-entrando');
+      requestAnimationFrame(() => {
+        body.classList.remove('dia-saliendo');
+        body.classList.remove('dia-entrando');
+      });
+    }, 150);
+  }
+  window.cambiarDia = function(delta){
+    transicionDia(() => { fechaActual.setDate(fechaActual.getDate()+delta); recargarDia(); });
+  };
+  window.irHoy = function(){
+    transicionDia(() => { fechaActual = new Date(); fechaActual.setHours(0,0,0,0); recargarDia(); });
+  };
 
   // ============================================================
   //   CAPA 2 — agendar / editar / eliminar citas + overrides
@@ -1209,6 +1307,23 @@ textarea.tbo-campo{ min-height:80px; padding: var(--tbo-e2) var(--tbo-e3); line-
   }
   function guardarSesion(){ sessionStorage.setItem(SESION_KEY, JSON.stringify({ inicio: Date.now() })); }
 
+  // Abre la app con una entrada suave (topbar y calendario aparecen en cascada)
+  function mostrarApp(){
+    document.body.classList.add('tbo-app-entra');
+    init();
+  }
+
+  // Cierra la pantalla de acceso con un fundido antes de mostrar la app
+  function ocultarAcceso(cb){
+    const ov = document.getElementById("accesoOverlay");
+    ov.classList.add('acceso-sale');
+    setTimeout(() => {
+      ov.style.display = "none";
+      ov.classList.remove('acceso-sale');
+      cb && cb();
+    }, 280);
+  }
+
   function mostrarAcceso(){
     const ov = document.getElementById("accesoOverlay");
     ov.style.display = "flex";
@@ -1220,8 +1335,7 @@ textarea.tbo-campo{ min-height:80px; padding: var(--tbo-e2) var(--tbo-e3); line-
       msg.textContent = "";
       if (inp.value === claveActualCache){
         guardarSesion();
-        ov.style.display = "none";
-        init();
+        ocultarAcceso(mostrarApp);
       } else {
         msg.textContent = "Clave incorrecta"; inp.value = ""; inp.focus();
       }
@@ -1233,7 +1347,7 @@ textarea.tbo-campo{ min-height:80px; padding: var(--tbo-e2) var(--tbo-e3); line-
   // Gate: espera la sesión maestra, lee la clave, y decide acceso
   (async function gateAcceso(){
     await leerClave();
-    if (sesionViva()) init();
+    if (sesionViva()) mostrarApp();
     else mostrarAcceso();
   })();
 
