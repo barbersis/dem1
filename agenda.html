@@ -107,7 +107,7 @@
     }
     .head-nombre { font-size:12.5px; font-weight:700; text-transform:uppercase; letter-spacing:.3px; }
 
-    .cal-body { position:relative; display:grid; }
+    .cal-body { position:relative; display:grid; padding-top:14px; }
     .body-eje { position:relative; border-right:1px solid var(--border); }
     .eje-hora {
       position:absolute; left:0; right:0; padding-right:6px; text-align:right;
@@ -116,9 +116,10 @@
     .eje-hora .ampm { font-size:9px; color:var(--text-faint); font-weight:500; display:block; line-height:1; }
 
     .body-col { position:relative; border-right:1px solid var(--border); }
-    /* líneas guía cada 10 min */
-    .linea { position:absolute; left:0; right:0; height:0; border-top:1px solid var(--border); }
-    .linea.hora { border-top:1px solid var(--border-strong); }
+    /* líneas guía: las de 10 min tenues y punteadas; la de cada hora sólida y marcada */
+    .linea { position:absolute; left:0; right:0; height:0; border-top:1px dashed #eef1f5; }
+    .linea.media { border-top:1px solid #e4e8ee; }              /* :30 media hora, un poco más visible */
+    .linea.hora { border-top:1.5px solid #c3ccd7; }              /* :00 hora en punto, marcada */
 
     /* tarjeta de cita */
     .cita {
@@ -180,6 +181,34 @@
     #loginOverlay input { width:100%; padding:10px; margin-bottom:10px; border:1px solid #ccc; border-radius:8px; box-sizing:border-box; }
     #loginOverlay .msg { color:#c00; font-size:12px; min-height:16px; margin-bottom:8px; }
     #loginOverlay button { width:100%; padding:10px; border:0; border-radius:8px; background:#111; color:#fff; font-size:14px; cursor:pointer; }
+
+    /* pantalla de clave interna (acceso de recepción cada sesión) */
+    #accesoOverlay {
+      position:fixed; inset:0; background:linear-gradient(135deg,#6c4df6,#4b32c3);
+      z-index:9998; display:none; align-items:center; justify-content:center;
+    }
+    #accesoOverlay .box { background:#fff; border-radius:16px; padding:32px 28px; max-width:340px; width:90%; box-shadow:0 20px 60px #0005; text-align:center; }
+    #accesoOverlay .logo { font-size:20px; font-weight:800; margin-bottom:4px; }
+    #accesoOverlay .logo span { color:var(--accent); }
+    #accesoOverlay .sub { font-size:13px; color:#888; margin-bottom:20px; }
+    #accesoOverlay input { width:100%; padding:12px; margin-bottom:12px; border:1px solid #ccc; border-radius:10px; box-sizing:border-box; font-size:16px; text-align:center; letter-spacing:2px; }
+    #accesoOverlay .msg { color:#c00; font-size:12px; min-height:16px; margin-bottom:8px; }
+    #accesoOverlay button { width:100%; padding:12px; border:0; border-radius:10px; background:var(--accent); color:#fff; font-size:15px; font-weight:600; cursor:pointer; }
+
+    /* modal cambiar clave interna */
+    #cambiarClaveModal { position:fixed; inset:0; background:#0007; z-index:9999; display:none; align-items:center; justify-content:center; }
+    #cambiarClaveModal .box { background:#fff; border-radius:14px; padding:24px; max-width:340px; width:90%; box-shadow:var(--shadow-lg); }
+    #cambiarClaveModal h3 { margin:0 0 6px; font-size:16px; }
+    #cambiarClaveModal p { margin:0 0 16px; font-size:12.5px; color:#888; }
+    #cambiarClaveModal label { display:block; font-size:12px; color:#666; font-weight:600; margin-bottom:4px; }
+    #cambiarClaveModal input { width:100%; padding:10px; margin-bottom:12px; border:1px solid #ccc; border-radius:8px; box-sizing:border-box; }
+    #cambiarClaveModal .msg { font-size:12px; min-height:16px; margin-bottom:8px; }
+    #cambiarClaveModal .acciones { display:flex; gap:8px; }
+    #cambiarClaveModal .acciones button { flex:1; padding:10px; border:0; border-radius:8px; font-size:13px; font-weight:600; cursor:pointer; }
+    #cambiarClaveModal .btn-cancelar { background:var(--surface-2); color:var(--text-muted); border:1px solid var(--border) !important; }
+    #cambiarClaveModal .btn-guardar { background:var(--accent); color:#fff; }
+    .config-btn { background:none; border:0; cursor:pointer; font-size:18px; color:var(--text-muted); padding:0 4px; }
+    .config-btn:hover { color:var(--text); }
   </style>
 </head>
 <body>
@@ -197,6 +226,7 @@
     <button class="avisos-fab" onclick="abrirAvisos()">
       🔔<span class="avisos-badge cero" id="avisos-badge">0</span>
     </button>
+    <button class="config-btn" onclick="abrirCambiarClave()" title="Cambiar clave de acceso">⚙️</button>
   </div>
 
   <div class="cal-wrap" id="cal-wrap">
@@ -220,6 +250,36 @@
 
   <div class="toast" id="toast"></div>
 
+  <!-- Pantalla de clave interna (acceso de recepción cada sesión) -->
+  <div id="accesoOverlay">
+    <div class="box">
+      <div class="logo">The Barber One <span>· Agenda</span></div>
+      <div class="sub">Ingresa la clave de acceso</div>
+      <input id="accesoInput" type="password" placeholder="Clave" inputmode="numeric" />
+      <div class="msg" id="accesoMsg"></div>
+      <button id="accesoBtn">Entrar</button>
+    </div>
+  </div>
+
+  <!-- Modal para cambiar la clave interna -->
+  <div id="cambiarClaveModal">
+    <div class="box">
+      <h3>Cambiar clave de acceso</h3>
+      <p>Esta es la clave que recepción teclea para entrar a la agenda.</p>
+      <label>Clave actual</label>
+      <input id="claveActual" type="password" placeholder="Clave actual" />
+      <label>Clave nueva</label>
+      <input id="claveNueva" type="password" placeholder="Nueva clave" />
+      <label>Repetir clave nueva</label>
+      <input id="claveNueva2" type="password" placeholder="Repite la nueva clave" />
+      <div class="msg" id="cambiarClaveMsg"></div>
+      <div class="acciones">
+        <button class="btn-cancelar" onclick="cerrarCambiarClave()">Cancelar</button>
+        <button class="btn-guardar" onclick="guardarClaveNueva()">Guardar</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Login maestro (una sola vez por dispositivo) -->
   <div id="loginOverlay">
     <div class="box">
@@ -234,7 +294,7 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
   import {
-    getFirestore, collection, onSnapshot, query, where
+    getFirestore, collection, onSnapshot, query, where, doc, getDoc, setDoc
   } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
   import {
     getAuth, setPersistence, browserLocalPersistence, onAuthStateChanged, signInWithEmailAndPassword
@@ -355,18 +415,29 @@
   // ---- Barberos: escucha VIVA (se auto-repara cuando la sesión queda lista;
   //      sin campo 'orden' garantizado → ordenar en JS) ----
   let unsubBarberos = null;
+  let reintentoBarberos = 0;
   function escucharBarberos(){
     if (unsubBarberos) unsubBarberos();
     unsubBarberos = onSnapshotSeguro(collection(db,'barberos'), snap => {
       BARBEROS = snap.docs.map(d => ({ id:d.id, ...d.data() }))
         .filter(b => b.activo !== false)
         .sort((a,b) => (a.orden||0)-(b.orden||0) || (a.nombre||'').localeCompare(b.nombre||''));
+      reintentoBarberos = 0;
       const c = document.getElementById('cargando'); if (c) c.remove();
       renderGrid();
     }, err => {
       console.error('Error al cargar barberos:', err);
-      const c = document.getElementById('cargando');
-      if (c) c.textContent = 'No se pudieron cargar los barberos. Recarga la página.';
+      // Error transitorio (p.ej. permisos aún resolviéndose al restaurar sesión):
+      // si ya hay barberos en pantalla, se ignora. Si no, se reintenta un par de
+      // veces antes de mostrar el mensaje final.
+      if (BARBEROS.length) return;
+      if (reintentoBarberos < 3){
+        reintentoBarberos++;
+        setTimeout(escucharBarberos, 1200);
+      } else {
+        const c = document.getElementById('cargando');
+        if (c) c.textContent = 'No se pudieron cargar los barberos. Recarga la página.';
+      }
     });
   }
 
@@ -501,11 +572,12 @@
     const dia = fechaActual.getDay();
     BARBEROS.forEach(b => {
       let c = `<div class="body-col" style="height:${altoTotal}px">`;
-      // líneas guía cada 10 min
+      // líneas guía cada 10 min (hora / media hora / 10min con estilos distintos)
       for (let m = APERTURA_MIN; m <= CIERRE_VISUAL_MIN; m += 10){
         const top = (m - APERTURA_MIN) * PX_POR_MIN;
-        const esHora = (m % 60) === 0;
-        c += `<div class="linea${esHora?' hora':''}" style="top:${top}px"></div>`;
+        const min = m % 60;
+        const clase = min === 0 ? ' hora' : (min === 30 ? ' media' : '');
+        c += `<div class="linea${clase}" style="top:${top}px"></div>`;
       }
       if (noTrabajaHoy(b)){
         c += `<div class="no-disp" style="top:0;height:${altoTotal}px"><span>${esDomingo()?'Domingo':'No trabaja hoy'}</span></div>`;
@@ -573,7 +645,10 @@
   // Todas las escuchas usan onSnapshotSeguro (esperan authListo internamente) y
   // se re-disparan solas cuando la sesión queda lista → no hay await bloqueante
   // que pueda dejar la página trabada si la restauración de sesión llega tarde.
+  let appIniciada = false;
   function init(){
+    if (appIniciada) return;
+    appIniciada = true;
     actualizarFechaLbl();
     escucharBarberos();
     escucharCitas();
@@ -582,7 +657,95 @@
     // refrescar "ahora" cada minuto
     setInterval(() => renderGrid(), 60000);
   }
-  init();
+
+  // ============================================================
+  //   CLAVE INTERNA (acceso de recepción cada sesión, 8h)
+  //   Se guarda en Firestore ajustes/agenda.claveAcceso; si no existe,
+  //   default "demo1234". Recepción puede cambiarla desde el engrane ⚙️.
+  // ============================================================
+  const CLAVE_DEFAULT = "demo1234";
+  const SESION_KEY = "tbo_agenda_sesion";
+  const SESION_HORAS = 8;
+  const AJUSTES_REF = doc(db, 'ajustes', 'agenda');
+  let claveActualCache = CLAVE_DEFAULT;
+
+  async function leerClave(){
+    await authListo;
+    try {
+      const snap = await getDoc(AJUSTES_REF);
+      if (snap.exists() && snap.data().claveAcceso) claveActualCache = snap.data().claveAcceso;
+      else claveActualCache = CLAVE_DEFAULT;
+    } catch(e){ claveActualCache = CLAVE_DEFAULT; }
+    return claveActualCache;
+  }
+
+  function sesionViva(){
+    try {
+      const raw = sessionStorage.getItem(SESION_KEY);
+      if (!raw) return false;
+      const { inicio } = JSON.parse(raw);
+      return (Date.now() - inicio) < SESION_HORAS*3600*1000;
+    } catch(e){ return false; }
+  }
+  function guardarSesion(){ sessionStorage.setItem(SESION_KEY, JSON.stringify({ inicio: Date.now() })); }
+
+  function mostrarAcceso(){
+    const ov = document.getElementById("accesoOverlay");
+    ov.style.display = "flex";
+    const inp = document.getElementById("accesoInput");
+    const btn = document.getElementById("accesoBtn");
+    const msg = document.getElementById("accesoMsg");
+    inp.focus();
+    function intentar(){
+      msg.textContent = "";
+      if (inp.value === claveActualCache){
+        guardarSesion();
+        ov.style.display = "none";
+        init();
+      } else {
+        msg.textContent = "Clave incorrecta"; inp.value = ""; inp.focus();
+      }
+    }
+    btn.onclick = intentar;
+    inp.onkeydown = e => { if (e.key === "Enter") intentar(); };
+  }
+
+  // Gate: espera la sesión maestra, lee la clave, y decide acceso
+  (async function gateAcceso(){
+    await leerClave();
+    if (sesionViva()) init();
+    else mostrarAcceso();
+  })();
+
+  // ---- Cambiar clave interna (engrane ⚙️) ----
+  window.abrirCambiarClave = function(){
+    document.getElementById("cambiarClaveModal").style.display = "flex";
+    document.getElementById("claveActual").value = "";
+    document.getElementById("claveNueva").value = "";
+    document.getElementById("claveNueva2").value = "";
+    document.getElementById("cambiarClaveMsg").textContent = "";
+  };
+  window.cerrarCambiarClave = function(){ document.getElementById("cambiarClaveModal").style.display = "none"; };
+  window.guardarClaveNueva = async function(){
+    const msg = document.getElementById("cambiarClaveMsg");
+    const actual = document.getElementById("claveActual").value;
+    const nueva = document.getElementById("claveNueva").value;
+    const nueva2 = document.getElementById("claveNueva2").value;
+    msg.style.color = "#c00";
+    if (actual !== claveActualCache){ msg.textContent = "La clave actual no es correcta."; return; }
+    if (nueva.length < 4){ msg.textContent = "La nueva clave debe tener al menos 4 caracteres."; return; }
+    if (nueva !== nueva2){ msg.textContent = "Las claves nuevas no coinciden."; return; }
+    try {
+      await setDoc(AJUSTES_REF, { claveAcceso: nueva }, { merge: true });
+      claveActualCache = nueva;
+      msg.style.color = "#14a37f";
+      msg.textContent = "Clave actualizada ✓";
+      setTimeout(() => window.cerrarCambiarClave(), 900);
+    } catch(e){
+      msg.textContent = "No se pudo guardar. Intenta de nuevo.";
+    }
+  };
+
 </script>
 </body>
 </html>
