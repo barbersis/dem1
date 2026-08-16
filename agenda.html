@@ -115,15 +115,35 @@ html[data-tema="oscuro"]{
   letter-spacing: -.01em;
 }
 
-/* Bloque de marca: el muro del logo, en versión pantalla */
-.tbo-marca{ display:flex; flex-direction:column; gap:2px; }
+/* ============ MARCA — nombre + línea + etiqueta, reutilizable ============
+   La raya se ajusta SOLA al ancho real del nombre y se anima expandiéndose
+   desde el centro. Los modificadores --sobre-oscuro/--sobre-claro la hacen
+   reusable en cualquier fondo (topbar negra, tarjeta clara de acceso, etc.)
+   ============================================================ */
+@keyframes tbo-raya-expande { from { transform: scaleX(0); opacity:.5; } to { transform: scaleX(1); opacity:1; } }
+@keyframes tbo-nombre-entra { from { opacity:0; letter-spacing:.08em; transform: translateY(4px); } to { opacity:1; letter-spacing:.22em; transform: translateY(0); } }
+
+.tbo-marca{ display:inline-flex; flex-direction:column; align-items:flex-start; gap:6px; }
+.tbo-marca__ancla{ display:inline-block; }
 .tbo-marca__nombre{
   font-family: var(--tbo-display); font-weight:300; font-size:16px;
-  text-transform: uppercase; letter-spacing:.28em; color: var(--tbo-texto);
+  text-transform: uppercase; letter-spacing:.22em; white-space:nowrap;
+  animation: tbo-nombre-entra .6s ease both;
 }
-.tbo-marca__lema{
-  font-family: var(--tbo-cuerpo); font-style: italic; font-size:10px;
-  letter-spacing:.06em; color: var(--tbo-texto-3);
+.tbo-marca__raya{
+  width:100%; height:1px; background:var(--tbo-ambar); margin-top:6px;
+  transform-origin:center; transform:scaleX(0);
+  animation: tbo-raya-expande .5s cubic-bezier(.16,.84,.44,1) .25s forwards;
+}
+.tbo-marca__sub{
+  font-family: var(--tbo-cuerpo); font-size:10px; text-transform:uppercase; letter-spacing:.18em;
+}
+.tbo-marca--sobre-oscuro .tbo-marca__nombre{ color:#F5F5F3; }
+.tbo-marca--sobre-oscuro .tbo-marca__sub{ color:#A0A5AD; }
+.tbo-marca--sobre-claro .tbo-marca__nombre{ color: var(--tbo-texto); }
+.tbo-marca--sobre-claro .tbo-marca__sub{ color: var(--tbo-texto-2); }
+@media (prefers-reduced-motion: reduce){
+  .tbo-marca__nombre, .tbo-marca__raya{ animation:none !important; transform:none !important; opacity:1 !important; }
 }
 
 /* ============ TOPBAR — aquí vive la firma ============ */
@@ -135,7 +155,6 @@ html[data-tema="oscuro"]{
   color: #F5F5F3;
   box-shadow: var(--tbo-cove);   /* el plafón: luz ámbar que se derrama hacia abajo */
 }
-.tbo-topbar .tbo-marca__nombre{ color:#F5F5F3; }
 .tbo-topbar__sep{ flex:1; }
 
 /* ============ SUPERFICIES ============ */
@@ -486,10 +505,11 @@ textarea.tbo-campo{ min-height:80px; padding: var(--tbo-e2) var(--tbo-e3); line-
     .config-btn { background:none; border:0; cursor:pointer; font-size:18px; color:var(--text-muted); padding:0 4px; }
     .config-btn:hover { color:var(--text); }
 
+
     /* ============================================================
-       AJUSTES DE MARCA (16 ago) — topbar oscura con línea bajo el
-       nombre (como el letrero del local), acceso rediseñado, y
-       animaciones de entrada / cambio de día.
+       AJUSTES DE MARCA (16 ago) — topbar oscura usando el componente
+       tbo-marca (línea a ancho exacto, animación de entrada), acceso
+       rediseñado, y animaciones de entrada / cambio de día.
        ============================================================ */
     @keyframes tboAparece {
       from { opacity:0; transform: translateY(10px); }
@@ -498,18 +518,18 @@ textarea.tbo-campo{ min-height:80px; padding: var(--tbo-e2) var(--tbo-e3); line-
 
     /* ---- Topbar: negro con el brillo ámbar del plafón ---- */
     .topbar { background: var(--tbo-tinta); border-bottom:none; box-shadow: var(--tbo-cove); color:#F5F5F3; }
-    .brand { display:flex; flex-direction:column; gap:5px; font-weight:400; letter-spacing:normal; white-space:normal; }
-    .brand .tbo-titulo { color:#F5F5F3; }
-    .brand-raya { width:30px; height:1px; background:var(--tbo-ambar); }
-    .brand .sub { font-family: var(--tbo-cuerpo); font-size:10px; text-transform:uppercase; letter-spacing:.18em; color:#A0A5AD; }
-    .nav-btn, .hoy-btn, .avisos-fab { background:transparent; border-color:#3A3E46; color:#D7DAE0; }
-    .nav-btn:hover, .hoy-btn:hover, .avisos-fab:hover { background:#1F2125; color:#fff; }
+    .nav-btn, .hoy-btn, .avisos-fab, .salir-btn { background:transparent; border-color:#3A3E46; color:#D7DAE0; }
+    .nav-btn:hover, .hoy-btn:hover, .avisos-fab:hover, .salir-btn:hover { background:#1F2125; color:#fff; }
     .hoy-btn { border-color:var(--tbo-ambar); color:var(--tbo-ambar); }
     .fecha-lbl .d1 { color:#F5F5F3; }
     .fecha-lbl .d2 { color:#9AA0AA; }
     .config-btn { color:#9AA0AA; }
     .config-btn:hover { color:#fff; }
     .avisos-badge { border-color: var(--tbo-tinta); }
+    .salir-btn {
+      height:34px; padding:0 12px; border:1px solid #3A3E46; border-radius:9px;
+      font-size:12px; font-weight:600; cursor:pointer;
+    }
 
     /* ---- Entrada al abrir la app (sesión viva o justo tras la clave) ---- */
     .tbo-app-entra .topbar { animation: tboAparece .5s ease both; }
@@ -533,19 +553,11 @@ textarea.tbo-campo{ min-height:80px; padding: var(--tbo-e2) var(--tbo-e3); line-
       border-radius: var(--tbo-r, 10px);
       box-shadow: 0 30px 80px rgba(0,0,0,.5);
       animation: tboAparece .5s ease both;
-    }
-    #accesoOverlay .logo {
-      font-family: var(--tbo-display); font-weight:300; text-transform:uppercase;
-      letter-spacing:.22em; font-size:17px; color: var(--tbo-texto, #16181C);
-    }
-    #accesoOverlay .acceso-raya { width:34px; height:1px; background:var(--tbo-ambar); margin:12px auto; }
-    #accesoOverlay .sub {
-      font-family: var(--tbo-cuerpo); font-size:11px; text-transform:uppercase;
-      letter-spacing:.14em; color: var(--tbo-texto-2, #6B717B);
+      display:flex; flex-direction:column; align-items:center;
     }
     #accesoOverlay input {
       border:1px solid var(--tbo-borde-firme, #C7CCD4); border-radius: var(--tbo-r-sm, 6px);
-      font-family: var(--tbo-cifra); letter-spacing:3px;
+      font-family: var(--tbo-cifra); letter-spacing:3px; margin-top:22px;
     }
     #accesoOverlay input:focus {
       outline:none; border-color: var(--tbo-ambar); box-shadow: 0 0 0 3px var(--tbo-ambar-tenue);
@@ -564,10 +576,12 @@ textarea.tbo-campo{ min-height:80px; padding: var(--tbo-e2) var(--tbo-e3); line-
 </head>
 <body class="tbo">
   <div class="topbar">
-    <div class="brand">
-      <div class="tbo-titulo tbo-titulo--m">The Barber One</div>
-      <div class="brand-raya"></div>
-      <div class="sub">Agenda</div>
+    <div class="tbo-marca tbo-marca--sobre-oscuro">
+      <div class="tbo-marca__ancla">
+        <div class="tbo-marca__nombre">The Barber One</div>
+        <div class="tbo-marca__raya"></div>
+      </div>
+      <div class="tbo-marca__sub">Agenda</div>
     </div>
     <div class="nav-fecha">
       <button class="hoy-btn" onclick="irHoy()">Hoy</button>
@@ -582,6 +596,7 @@ textarea.tbo-campo{ min-height:80px; padding: var(--tbo-e2) var(--tbo-e3); line-
       🔔<span class="avisos-badge cero" id="avisos-badge">0</span>
     </button>
     <button class="config-btn" onclick="abrirCambiarClave()" title="Cambiar clave de acceso">⚙️</button>
+    <button class="salir-btn" onclick="cerrarSesion()" title="Cerrar sesión">Salir</button>
   </div>
 
   <div class="cal-wrap" id="cal-wrap">
@@ -608,9 +623,13 @@ textarea.tbo-campo{ min-height:80px; padding: var(--tbo-e2) var(--tbo-e3); line-
   <!-- Pantalla de clave interna (acceso de recepción cada sesión) -->
   <div id="accesoOverlay">
     <div class="box">
-      <div class="logo">The Barber One</div>
-      <div class="acceso-raya"></div>
-      <div class="sub">Agenda · Acceso de recepción</div>
+      <div class="tbo-marca tbo-marca--sobre-claro">
+        <div class="tbo-marca__ancla">
+          <div class="tbo-marca__nombre">The Barber One</div>
+          <div class="tbo-marca__raya"></div>
+        </div>
+        <div class="tbo-marca__sub">Agenda · Acceso de recepción</div>
+      </div>
       <input id="accesoInput" type="password" placeholder="Clave" inputmode="numeric" />
       <div class="msg" id="accesoMsg"></div>
       <button id="accesoBtn">Entrar</button>
@@ -1323,6 +1342,21 @@ textarea.tbo-campo{ min-height:80px; padding: var(--tbo-e2) var(--tbo-e3); line-
       cb && cb();
     }, 280);
   }
+
+  // Botón "Salir": cierra la sesión local de recepción y regresa a la
+  // pantalla de acceso con un fundido de entrada (no afecta la sesión
+  // maestra de Firebase, solo el candado de 8h de esta pantalla).
+  window.cerrarSesion = function(){
+    sessionStorage.removeItem(SESION_KEY);
+    document.body.classList.remove('tbo-app-entra');
+    const ov = document.getElementById("accesoOverlay");
+    ov.classList.add('acceso-sale');
+    ov.style.display = "flex";
+    requestAnimationFrame(() => { ov.classList.remove('acceso-sale'); });
+    const inp = document.getElementById("accesoInput");
+    inp.value = "";
+    setTimeout(() => inp.focus(), 60);
+  };
 
   function mostrarAcceso(){
     const ov = document.getElementById("accesoOverlay");

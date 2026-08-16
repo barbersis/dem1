@@ -533,7 +533,12 @@ window.enviarSolicitud = async function(){
   const d = selFecha;
 
   try {
-    await authListo; // asegura identidad anónima antes de escribir (reglas)
+    // Si la identidad anónima nunca resuelve (ej. "Anonymous" deshabilitado
+    // en Firebase Auth), esto evita que se quede colgado sin avisar nada.
+    await Promise.race([
+      authListo,
+      new Promise((_, rej) => setTimeout(() => rej({code:'auth-timeout', message:'La identidad anónima nunca respondió'}), 6000))
+    ]);
     // Agenda DIRECTO como cita confirmada (sin aprobación manual)
     await addDoc(collection(db,'citas'), {
       nombre, telefono: tel, comentario: com,
@@ -555,7 +560,10 @@ window.enviarSolicitud = async function(){
     document.getElementById('confirmacion').style.display = 'flex';
     document.querySelector('.steps').style.display = 'none';
 
-  } catch(e) { showToast('Error al enviar. Intenta de nuevo.'); }
+  } catch(e) {
+    console.error('Error al reservar:', e.code || '(sin código)', e.message || e);
+    showToast('Error al enviar (' + (e.code || 'ver consola') + '). Intenta de nuevo.');
+  }
 };
 
 window.reiniciar = function(){
