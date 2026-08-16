@@ -7,7 +7,245 @@
   <meta http-equiv="Expires" content="0"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>The Barber One — Agenda</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
   <style>
+/* ============================================================
+   THE BARBER ONE — TEMA VISUAL ÚNICO  (Capa 0)
+   ------------------------------------------------------------
+   CÓMO SE USA
+   1) En el <head> de cada archivo, antes de tu <style>:
+      <link rel="preconnect" href="https://fonts.googleapis.com">
+      <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+      <link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+   2) Pega TODO este archivo al INICIO de tu <style>, antes de tu CSS actual.
+      Así tus reglas actuales siguen ganando: no cambia nada de golpe.
+      Luego, archivo por archivo, vas cambiando colores duros por var(--tbo-*).
+
+   3) Tema por archivo (híbrido):
+      reservar.html  ->  <html data-tema="oscuro">   (cara al cliente)
+      agenda / caja / barb  ->  <html>  sin atributo (claro, jornada larga)
+
+   TODO sale del local: negro mate, mármol blanco, piso gris frío,
+   cromo, y la cinta LED ámbar del plafón. Ese ámbar es el acento
+   de la marca y el único lugar donde el tema se permite brillar.
+   ============================================================ */
+
+:root{
+  /* --- Marca (igual en claro y oscuro) --- */
+  --tbo-tinta:        #0E0E10;   /* el negro del local */
+  --tbo-ambar:        #E0A14A;   /* la cinta LED del plafón */
+  --tbo-ambar-claro:  #F0C078;
+  --tbo-ambar-tenue:  rgba(224,161,74,.12);
+
+  /* --- Semánticos (apagados a propósito, nada de neón) --- */
+  --tbo-ok:      #2E7D5B;
+  --tbo-alerta:  #B4552B;
+  --tbo-error:   #A32B2B;
+  --tbo-web:     #3C6E9C;   /* cita que entró por reserva web */
+  --tbo-local:   #6B5B8A;   /* cita capturada en recepción */
+
+  /* --- Superficies: TEMA CLARO (agenda, caja, barb) --- */
+  --tbo-fondo:        #F4F5F7;   /* gris frío del porcelánico */
+  --tbo-sup:          #FFFFFF;
+  --tbo-sup-2:        #FAFAFB;
+  --tbo-borde:        #E2E5EA;
+  --tbo-borde-firme:  #C7CCD4;
+  --tbo-texto:        #16181C;
+  --tbo-texto-2:      #6B717B;
+  --tbo-texto-3:      #9AA0AA;
+  --tbo-sombra:       0 1px 2px rgba(14,14,16,.05), 0 6px 18px rgba(14,14,16,.05);
+
+  /* --- Ritmo --- */
+  --tbo-r:      10px;   /* radio estándar */
+  --tbo-r-sm:   6px;
+  --tbo-e1: 4px;  --tbo-e2: 8px;  --tbo-e3: 12px;
+  --tbo-e4: 16px; --tbo-e5: 24px; --tbo-e6: 32px;
+
+  /* --- Tipografía --- */
+  --tbo-display: 'Jost', system-ui, sans-serif;          /* títulos, caps espaciadas */
+  --tbo-cuerpo:  'IBM Plex Sans', system-ui, sans-serif; /* interfaz */
+  --tbo-cifra:   'IBM Plex Mono', ui-monospace, monospace; /* horas y dinero */
+
+  /* --- FIRMA DE LA MARCA: el "cove", el brillo ámbar del plafón --- */
+  --tbo-cove: 0 1px 0 var(--tbo-ambar), 0 6px 20px -6px rgba(224,161,74,.45);
+}
+
+html[data-tema="oscuro"]{
+  --tbo-fondo:        #0E0E10;
+  --tbo-sup:          #17181B;
+  --tbo-sup-2:        #1F2125;
+  --tbo-borde:        #2A2D33;
+  --tbo-borde-firme:  #3A3E46;
+  --tbo-texto:        #F5F5F3;   /* blanco mármol */
+  --tbo-texto-2:      #A0A5AD;
+  --tbo-texto-3:      #71767E;
+  --tbo-sombra:       0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.35);
+}
+
+/* ============ BASE ============ */
+.tbo, .tbo body{
+  background: var(--tbo-fondo);
+  color: var(--tbo-texto);
+  font-family: var(--tbo-cuerpo);
+  font-size: 15px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ============ TIPOGRAFÍA ============ */
+.tbo-titulo{
+  font-family: var(--tbo-display);
+  font-weight: 300;
+  text-transform: uppercase;
+  letter-spacing: .18em;   /* el tracking del logo del local */
+  line-height: 1.25;
+  margin: 0;
+}
+.tbo-titulo--xl{ font-size: 26px; }
+.tbo-titulo--l { font-size: 20px; }
+.tbo-titulo--m { font-size: 15px; }
+.tbo-titulo--s { font-size: 12px; letter-spacing: .22em; color: var(--tbo-texto-2); }
+
+.tbo-cifra{                 /* horas, importes, totales */
+  font-family: var(--tbo-cifra);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -.01em;
+}
+
+/* Bloque de marca: el muro del logo, en versión pantalla */
+.tbo-marca{ display:flex; flex-direction:column; gap:2px; }
+.tbo-marca__nombre{
+  font-family: var(--tbo-display); font-weight:300; font-size:16px;
+  text-transform: uppercase; letter-spacing:.28em; color: var(--tbo-texto);
+}
+.tbo-marca__lema{
+  font-family: var(--tbo-cuerpo); font-style: italic; font-size:10px;
+  letter-spacing:.06em; color: var(--tbo-texto-3);
+}
+
+/* ============ TOPBAR — aquí vive la firma ============ */
+.tbo-topbar{
+  position: sticky; top:0; z-index: 50;
+  display:flex; align-items:center; gap: var(--tbo-e4);
+  padding: var(--tbo-e3) var(--tbo-e4);
+  background: var(--tbo-tinta);
+  color: #F5F5F3;
+  box-shadow: var(--tbo-cove);   /* el plafón: luz ámbar que se derrama hacia abajo */
+}
+.tbo-topbar .tbo-marca__nombre{ color:#F5F5F3; }
+.tbo-topbar__sep{ flex:1; }
+
+/* ============ SUPERFICIES ============ */
+.tbo-tarjeta{
+  background: var(--tbo-sup);
+  border: 1px solid var(--tbo-borde);
+  border-radius: var(--tbo-r);
+  box-shadow: var(--tbo-sombra);
+}
+.tbo-tarjeta__cab{
+  padding: var(--tbo-e3) var(--tbo-e4);
+  border-bottom: 1px solid var(--tbo-borde);
+}
+.tbo-tarjeta__cuerpo{ padding: var(--tbo-e4); }
+
+/* ============ BOTONES ============ */
+.tbo-btn{
+  display:inline-flex; align-items:center; justify-content:center; gap: var(--tbo-e2);
+  min-height: 42px; padding: 0 var(--tbo-e4);
+  border:1px solid var(--tbo-borde-firme); border-radius: var(--tbo-r-sm);
+  background: var(--tbo-sup); color: var(--tbo-texto);
+  font-family: var(--tbo-cuerpo); font-size:14px; font-weight:500;
+  cursor:pointer; transition: background .15s ease, border-color .15s ease;
+}
+.tbo-btn:hover{ background: var(--tbo-sup-2); border-color: var(--tbo-texto-3); }
+.tbo-btn:disabled{ opacity:.45; cursor:not-allowed; }
+
+.tbo-btn--primario{
+  background: var(--tbo-tinta); color:#F5F5F3; border-color: var(--tbo-tinta);
+}
+.tbo-btn--primario:hover{ background:#000; border-color:#000; }
+html[data-tema="oscuro"] .tbo-btn--primario{
+  background: var(--tbo-ambar); color: var(--tbo-tinta); border-color: var(--tbo-ambar);
+}
+html[data-tema="oscuro"] .tbo-btn--primario:hover{ background: var(--tbo-ambar-claro); }
+
+.tbo-btn--fantasma{ background: transparent; border-color: var(--tbo-borde); color: var(--tbo-texto-2); }
+.tbo-btn--peligro{ background: transparent; border-color: var(--tbo-error); color: var(--tbo-error); }
+.tbo-btn--peligro:hover{ background: var(--tbo-error); color:#fff; }
+
+/* ============ CAMPOS ============ */
+.tbo-etiqueta{
+  display:block; margin-bottom: var(--tbo-e1);
+  font-size:11px; text-transform:uppercase; letter-spacing:.12em; color: var(--tbo-texto-2);
+}
+.tbo-campo{
+  width:100%; min-height:42px; padding: 0 var(--tbo-e3);
+  background: var(--tbo-sup); color: var(--tbo-texto);
+  border:1px solid var(--tbo-borde-firme); border-radius: var(--tbo-r-sm);
+  font-family: var(--tbo-cuerpo); font-size:15px;   /* 15px+ evita el zoom de iOS */
+}
+textarea.tbo-campo{ min-height:80px; padding: var(--tbo-e2) var(--tbo-e3); line-height:1.5; }
+.tbo-campo::placeholder{ color: var(--tbo-texto-3); }
+.tbo-campo:focus{ outline:none; border-color: var(--tbo-ambar); box-shadow: 0 0 0 3px var(--tbo-ambar-tenue); }
+
+/* ============ CHIPS ============ */
+.tbo-chip{
+  display:inline-flex; align-items:center; gap:6px;
+  min-height:32px; padding: 0 var(--tbo-e3);
+  border:1px solid var(--tbo-borde); border-radius:999px;
+  background: var(--tbo-sup); color: var(--tbo-texto-2);
+  font-size:13px; cursor:pointer;
+}
+.tbo-chip--activo{
+  border-color: var(--tbo-ambar); color: var(--tbo-texto);
+  background: var(--tbo-ambar-tenue); font-weight:500;
+}
+.tbo-chip--apagado{ opacity:.5; }
+
+/* ============ MODAL ============ */
+.tbo-velo{
+  position:fixed; inset:0; z-index:900;
+  background: rgba(14,14,16,.55); backdrop-filter: blur(2px);
+  display:flex; align-items:center; justify-content:center; padding: var(--tbo-e4);
+}
+.tbo-modal{
+  width:100%; max-width:420px; max-height:88vh; overflow:auto;
+  background: var(--tbo-sup); border-radius: var(--tbo-r);
+  box-shadow: 0 20px 60px rgba(0,0,0,.35);
+}
+.tbo-modal__cab{
+  padding: var(--tbo-e4); border-bottom:1px solid var(--tbo-borde);
+  display:flex; align-items:center; justify-content:space-between;
+}
+.tbo-modal__cuerpo{ padding: var(--tbo-e4); display:grid; gap: var(--tbo-e3); }
+.tbo-modal__pie{
+  padding: var(--tbo-e4); border-top:1px solid var(--tbo-borde);
+  display:flex; gap: var(--tbo-e2); justify-content:flex-end;
+}
+
+/* ============ VACÍO Y ERROR (dan dirección, no ánimo) ============ */
+.tbo-vacio{
+  padding: var(--tbo-e6) var(--tbo-e4); text-align:center; color: var(--tbo-texto-2);
+}
+.tbo-error{
+  padding: var(--tbo-e3); border-radius: var(--tbo-r-sm);
+  border:1px solid var(--tbo-error); color: var(--tbo-error);
+  background: transparent; font-size:14px;
+}
+
+/* ============ PISO DE CALIDAD ============ */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible{
+  outline: 2px solid var(--tbo-ambar);
+  outline-offset: 2px;
+}
+@media (prefers-reduced-motion: reduce){
+  *, *::before, *::after{ animation-duration:.01ms !important; transition-duration:.01ms !important; }
+}
+
+
     /* ============================================================
        AGENDA DE RECEPCIÓN — The Barber One (Joss)
        CAPA 1: grid de lectura por MINUTOS EXACTOS + avisos entrantes.
@@ -249,9 +487,9 @@
     .config-btn:hover { color:var(--text); }
   </style>
 </head>
-<body>
+<body class="tbo">
   <div class="topbar">
-    <div class="brand">The Barber One <span>· Agenda</span></div>
+    <div class="brand tbo-titulo tbo-titulo--m">The Barber One <span>· Agenda</span></div>
     <div class="nav-fecha">
       <button class="hoy-btn" onclick="irHoy()">Hoy</button>
       <button class="nav-btn" onclick="cambiarDia(-1)">‹</button>
