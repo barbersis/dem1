@@ -336,9 +336,17 @@ function renderServiciosGrid(){
       document.querySelectorAll('.srv-card').forEach(c => c.classList.remove('selected'));
       card.classList.add('selected');
       selServicio = s;
-      prefBarbero = 'cualquiera';
+      // Si el servicio lo hace UN SOLO barbero (ej. los exclusivos de
+      // Joss), no lo dejamos oculto tras "Cualquiera": se muestra
+      // directo que la cita es con él.
+      if (s.barberosPermitidos && s.barberosPermitidos.length === 1) {
+        prefBarbero = s.barberosPermitidos[0];
+        barberoExpandido = true;
+      } else {
+        prefBarbero = 'cualquiera';
+        barberoExpandido = false;
+      }
       selSlot = null;
-      barberoExpandido = false;
       document.getElementById('btn-1').disabled = false;
     };
     grid.appendChild(card);
