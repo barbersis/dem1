@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
+  <meta http-equiv="Pragma" content="no-cache"/>
+  <meta http-equiv="Expires" content="0"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>The Barber One — Agenda</title>
+  <style>
+    /* ============================================================
+       AGENDA DE RECEPCIÓN — The Barber One (Joss)
+       CAPA 1: grid de lectura por MINUTOS EXACTOS + avisos entrantes.
+       Motor de minutos (durMin, inicios cada 5, subdivisiones visuales
+       de 10 min). Crear/editar/override llegan en la Capa 2.
+       ============================================================ */
+    :root {
+      --font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      --bg: #f4f6f9;
+      --surface: #ffffff;
+      --surface-2: #f7f9fb;
+      --border: #e4e8ee;
+      --border-strong: #d3d9e2;
+      --text: #14181f;
+      --text-muted: #5b6472;
+      --text-faint: #99a2af;
+      --accent: #6c4df6;
+      --shadow-sm: 0 1px 2px rgba(16,24,40,.06), 0 1px 3px rgba(16,24,40,.05);
+      --shadow-md: 0 4px 12px rgba(16,24,40,.08);
+      --shadow-lg: 0 12px 32px rgba(16,24,40,.16);
+      /* Estados de cita */
+      --normal:   #14a37f;  --normal-bg:  #d9f5ec;  --normal-bd:  #8ddcc6;
+      --web:      #2563eb;  --web-bg:     #dbeafe;   --web-bd:     #a3c4fb;
+      --bloqueo:  #64748b;  --bloqueo-bg: #e7ebf0;   --bloqueo-bd: #c3ccd7;
+      /* Grid */
+      --px-por-min: 1.6;   /* 1.6px por minuto → 96px por hora, 16px por subdivisión de 10 min */
+      --col-min-w: 150px;
+      --eje-w: 56px;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin:0; padding:0; height:100%; }
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+      display: flex; flex-direction: column; height: 100vh; overflow: hidden;
+    }
+
+    /* ---------- Barra superior ---------- */
+    .topbar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 10px 14px;
+      display: flex; align-items: center; gap: 12px;
+      box-shadow: var(--shadow-sm);
+      z-index: 30;
+    }
+    .brand { font-weight: 800; font-size: 15px; letter-spacing:.2px; white-space:nowrap; }
+    .brand span { color: var(--accent); }
+    .nav-fecha { display:flex; align-items:center; gap:6px; margin-left:auto; }
+    .nav-btn {
+      width:34px; height:34px; border:1px solid var(--border-strong); background:var(--surface);
+      border-radius:9px; font-size:16px; cursor:pointer; color:var(--text-muted);
+      display:flex; align-items:center; justify-content:center; transition:.12s;
+    }
+    .nav-btn:hover { background:var(--surface-2); color:var(--text); }
+    .fecha-lbl { text-align:center; min-width:150px; }
+    .fecha-lbl .d1 { font-weight:700; font-size:14px; text-transform:capitalize; }
+    .fecha-lbl .d2 { font-size:11px; color:var(--text-faint); }
+    .hoy-btn {
+      border:1px solid var(--border-strong); background:var(--surface); color:var(--text-muted);
+      border-radius:9px; padding:0 12px; height:34px; font-size:12px; font-weight:600; cursor:pointer;
+    }
+    .hoy-btn:hover { background:var(--surface-2); }
+
+    /* Campana de avisos */
+    .avisos-fab {
+      position:relative; width:38px; height:38px; border-radius:11px; border:1px solid var(--border-strong);
+      background:var(--surface); cursor:pointer; display:flex; align-items:center; justify-content:center;
+      font-size:18px;
+    }
+    .avisos-fab:hover { background:var(--surface-2); }
+    .avisos-badge {
+      position:absolute; top:-6px; right:-6px; min-width:18px; height:18px; padding:0 4px;
+      background:#ef4444; color:#fff; border-radius:9px; font-size:11px; font-weight:700;
+      display:flex; align-items:center; justify-content:center; border:2px solid var(--surface);
+    }
+    .avisos-badge.cero { display:none; }
+
+    /* ---------- Contenedor del calendario ---------- */
+    .cal-wrap { flex:1; overflow:auto; position:relative; background:var(--surface); }
+    .cal-grid { position:relative; display:grid; }
+    /* columnas: eje + una por barbero */
+    .cal-head {
+      position:sticky; top:0; z-index:20; display:grid; background:var(--surface);
+      border-bottom:1px solid var(--border-strong); box-shadow: var(--shadow-sm);
+    }
+    .head-eje { border-right:1px solid var(--border); }
+    .head-barbero {
+      padding:10px 6px 8px; text-align:center; border-right:1px solid var(--border);
+      display:flex; flex-direction:column; align-items:center; gap:5px;
+    }
+    .head-avatar {
+      width:44px; height:44px; border-radius:50%; color:#fff; font-weight:700; font-size:16px;
+      display:flex; align-items:center; justify-content:center; box-shadow: var(--shadow-sm);
+    }
+    .head-nombre { font-size:12.5px; font-weight:700; text-transform:uppercase; letter-spacing:.3px; }
+
+    .cal-body { position:relative; display:grid; }
+    .body-eje { position:relative; border-right:1px solid var(--border); }
+    .eje-hora {
+      position:absolute; left:0; right:0; padding-right:6px; text-align:right;
+      font-size:11px; color:var(--text-muted); font-weight:600; transform:translateY(-7px);
+    }
+    .eje-hora .ampm { font-size:9px; color:var(--text-faint); font-weight:500; display:block; line-height:1; }
+
+    .body-col { position:relative; border-right:1px solid var(--border); }
+    /* líneas guía cada 10 min */
+    .linea { position:absolute; left:0; right:0; height:0; border-top:1px solid var(--border); }
+    .linea.hora { border-top:1px solid var(--border-strong); }
+
+    /* tarjeta de cita */
+    .cita {
+      position:absolute; left:3px; right:3px; border-radius:8px; padding:5px 7px; overflow:hidden;
+      cursor:default; box-shadow: var(--shadow-sm); border-left:3px solid; font-size:11px; line-height:1.25;
+    }
+    .cita.normal { background:var(--normal-bg); border-left-color:var(--normal); }
+    .cita.web    { background:var(--web-bg);    border-left-color:var(--web); }
+    .cita-rango  { font-size:10.5px; color:var(--text-muted); font-weight:600; }
+    .cita-nombre { font-size:12px; font-weight:700; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .cita-servicio { font-size:10.5px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .cita-tag { position:absolute; top:4px; right:5px; font-size:10px; }
+
+    /* bloque gris "no disponible" (override no-trabaja / domingo) */
+    .no-disp {
+      position:absolute; left:0; right:0;
+      background: repeating-linear-gradient(45deg, #eceff3, #eceff3 8px, #e3e7ec 8px, #e3e7ec 16px);
+      display:flex; align-items:center; justify-content:center;
+    }
+    .no-disp span { font-size:11px; color:var(--text-faint); font-weight:600; background:rgba(255,255,255,.55); padding:2px 8px; border-radius:6px; }
+
+    /* línea de "ahora" */
+    .ahora-line { position:absolute; left:0; right:0; height:0; border-top:2px solid #ef4444; z-index:15; pointer-events:none; }
+    .ahora-dot { position:absolute; left:-4px; top:-4px; width:8px; height:8px; border-radius:50%; background:#ef4444; }
+
+    /* ---------- Panel de avisos ---------- */
+    .avisos-panel {
+      position:fixed; top:0; right:0; bottom:0; width:min(340px, 90vw); background:var(--surface);
+      box-shadow: var(--shadow-lg); z-index:100; transform:translateX(100%); transition:transform .22s ease;
+      display:flex; flex-direction:column;
+    }
+    .avisos-panel.open { transform:translateX(0); }
+    .avisos-head { padding:14px 16px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
+    .avisos-head h3 { margin:0; font-size:15px; }
+    .avisos-close { border:0; background:none; font-size:22px; cursor:pointer; color:var(--text-muted); line-height:1; }
+    .avisos-body { flex:1; overflow-y:auto; padding:12px; }
+    .avisos-vacio { text-align:center; color:var(--text-faint); font-size:13px; padding:30px 12px; }
+    .aviso-sep { font-size:11px; font-weight:700; color:var(--text-faint); text-transform:uppercase; letter-spacing:.4px; margin:10px 4px 6px; }
+    .ticket { background:var(--surface-2); border:1px solid var(--border); border-radius:10px; padding:10px 12px; margin-bottom:8px; }
+    .ticket.futuro { border-color:#f5c78a; background:#fff8ee; }
+    .ticket-etq { font-size:10.5px; font-weight:700; color:var(--text-muted); margin-bottom:3px; }
+    .ticket-nombre { font-size:13px; font-weight:700; }
+    .ticket-sub { font-size:11.5px; color:var(--text-muted); margin:2px 0 8px; }
+    .ticket-btn { width:100%; padding:7px; border:0; border-radius:8px; background:var(--accent); color:#fff; font-size:12px; font-weight:600; cursor:pointer; }
+    .panel-backdrop { position:fixed; inset:0; background:#0006; z-index:99; opacity:0; pointer-events:none; transition:opacity .2s; }
+    .panel-backdrop.open { opacity:1; pointer-events:auto; }
+
+    /* toast */
+    .toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%) translateY(20px); background:#111; color:#fff; padding:10px 18px; border-radius:10px; font-size:13px; opacity:0; transition:.2s; z-index:200; pointer-events:none; }
+    .toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+    .cargando { padding:40px; text-align:center; color:var(--text-faint); font-size:14px; }
+
+    /* overlay login maestro */
+    #loginOverlay { position:fixed; inset:0; background:#111a; z-index:99999; display:none; align-items:center; justify-content:center; }
+    #loginOverlay .box { background:#fff; border-radius:14px; padding:28px 26px; max-width:320px; width:90%; box-shadow:0 10px 40px #0006; }
+    #loginOverlay h3 { margin:0 0 14px; font-size:18px; }
+    #loginOverlay p { margin:0 0 14px; font-size:13px; color:#555; }
+    #loginOverlay input { width:100%; padding:10px; margin-bottom:10px; border:1px solid #ccc; border-radius:8px; box-sizing:border-box; }
+    #loginOverlay .msg { color:#c00; font-size:12px; min-height:16px; margin-bottom:8px; }
+    #loginOverlay button { width:100%; padding:10px; border:0; border-radius:8px; background:#111; color:#fff; font-size:14px; cursor:pointer; }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <div class="brand">The Barber One <span>· Agenda</span></div>
+    <div class="nav-fecha">
+      <button class="hoy-btn" onclick="irHoy()">Hoy</button>
+      <button class="nav-btn" onclick="cambiarDia(-1)">‹</button>
+      <div class="fecha-lbl">
+        <div class="d1" id="fecha-d1">—</div>
+        <div class="d2" id="fecha-d2"></div>
+      </div>
+      <button class="nav-btn" onclick="cambiarDia(1)">›</button>
+    </div>
+    <button class="avisos-fab" onclick="abrirAvisos()">
+      🔔<span class="avisos-badge cero" id="avisos-badge">0</span>
+    </button>
+  </div>
+
+  <div class="cal-wrap" id="cal-wrap">
+    <div class="cal-head" id="cal-head"></div>
+    <div class="cal-body" id="cal-body">
+      <div class="cargando" id="cargando">Conectando…</div>
+    </div>
+  </div>
+
+  <!-- Panel de avisos -->
+  <div class="panel-backdrop" id="panel-backdrop" onclick="cerrarAvisos()"></div>
+  <div class="avisos-panel" id="avisos-panel">
+    <div class="avisos-head">
+      <h3>Reservas entrantes</h3>
+      <button class="avisos-close" onclick="cerrarAvisos()">×</button>
+    </div>
+    <div class="avisos-body" id="avisos-body">
+      <div class="avisos-vacio">Sin avisos pendientes 🎉</div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <!-- Login maestro (una sola vez por dispositivo) -->
+  <div id="loginOverlay">
+    <div class="box">
+      <h3>Conectar Agenda (una sola vez)</h3>
+      <p>Este dispositivo no tiene sesión guardada. Pide la contraseña maestra al administrador.</p>
+      <input id="masterPassInput" type="password" placeholder="Contraseña maestra" />
+      <div class="msg" id="masterPassMsg"></div>
+      <button id="masterPassBtn">Conectar</button>
+    </div>
+  </div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
+  import {
+    getFirestore, collection, onSnapshot, query, where, getDocs
+  } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
+  import {
+    getAuth, setPersistence, browserLocalPersistence, onAuthStateChanged, signInWithEmailAndPassword
+  } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
+
+  // ##############################################################
+  // #   CONFIGURA AQUÍ POR CLIENTE                               #
+  // ##############################################################
+  const CONFIG = {
+    firebase: {
+      apiKey: "AIzaSyDK4jYc1XgHEkN6d-WvcSUyR4nhFWEgN74",
+      authDomain: "demo1-37837.firebaseapp.com",
+      projectId: "demo1-37837",
+      appId: "1:71418270260:web:2cc80e1070355684aff061"
+    },
+    masterEmail: "sis.bar01+joss-agenda@gmail.com"
+  };
+  // ##############################################################
+
+  const app  = initializeApp(CONFIG.firebase);
+  const db   = getFirestore(app);
+  const auth = getAuth(app);
+
+  // ===== Auth maestra invisible (patrón de caja.html) =====
+  let resolverAuthListo;
+  const authListo = new Promise(r => { resolverAuthListo = r; });
+
+  function onSnapshotSeguro(ref, cb, cbErr){
+    let real = null;
+    authListo.then(() => { real = cbErr ? onSnapshot(ref, cb, cbErr) : onSnapshot(ref, cb); });
+    return () => { if (real) real(); };
+  }
+
+  function mostrarOverlayMaestro(){
+    const ov = document.getElementById("loginOverlay");
+    ov.style.display = "flex";
+    const inp = document.getElementById("masterPassInput");
+    const btn = document.getElementById("masterPassBtn");
+    const msg = document.getElementById("masterPassMsg");
+    function intentar(){
+      msg.textContent = "";
+      signInWithEmailAndPassword(auth, CONFIG.masterEmail, inp.value).catch(() => {
+        msg.textContent = "Contraseña incorrecta"; inp.value = "";
+      });
+    }
+    btn.onclick = intentar;
+    inp.onkeydown = e => { if (e.key === "Enter") intentar(); };
+  }
+
+  setPersistence(auth, browserLocalPersistence).then(() => {
+    onAuthStateChanged(auth, user => {
+      if (user){
+        document.getElementById("loginOverlay").style.display = "none";
+        user.getIdToken(true).then(() => resolverAuthListo()).catch(() => resolverAuthListo());
+      } else {
+        mostrarOverlayMaestro();
+      }
+    });
+  });
+
+  // ============================================================
+  //   MOTOR DE MINUTOS EXACTOS (modelo The Barber One)
+  //   Horario 10:00–19:15 (último inicio 19:15). Domingo cerrado.
+  //   Subdivisiones visuales cada 10 min. Citas al minuto real.
+  // ============================================================
+  const APERTURA_MIN = 10*60;      // 10:00
+  const ULTIMO_INICIO_MIN = 19*60+15; // 19:15 (última cita disponible)
+  // El eje visual llega hasta 8:45pm: la última cita (inicio 19:15) puede durar
+  // hasta 90 min (Corte/ritual/facial), y 19:15+90 = 20:45. Así nunca se recorta.
+  const CIERRE_VISUAL_MIN = 20*60+45; // 20:45
+  const PX_POR_MIN = 1.6;
+  const DIAS_N = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+  const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+  const PALETA = ['#14a37f','#2563eb','#d9642c','#8b5cf6','#e11d8f','#0891b2','#ca8a04','#65a30d'];
+
+  function minToSlot(m){ const h=Math.floor(m/60), mm=m%60; return `${String(h).padStart(2,'0')}:${String(mm).padStart(2,'0')}`; }
+  function slotToMin(s){ const [h,m]=s.split(':').map(Number); return h*60+m; }
+  function slot12hr(s){ const [h,m]=s.split(':').map(Number); const ap=h>=12?'PM':'AM'; const h12=h%12||12; return `${h12}:${String(m).padStart(2,'0')} ${ap}`; }
+  function min12hr(m){ return slot12hr(minToSlot(m)); }
+  function getDateKey(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+  function iniciales(n){ return (n||'').trim().slice(0,2).toUpperCase(); }
+  function colorBarbero(nombre){ let h=0; for (let i=0;i<(nombre||'').length;i++) h=(h*31+nombre.charCodeAt(i))>>>0; return PALETA[h % PALETA.length]; }
+  // duración de una cita en minutos: prioriza durMin; cae a 30 si es vieja/sin dato
+  function durCita(c){ return Number(c.durMin) || 30; }
+
+  // ---- Estado ----
+  let fechaActual = new Date(); fechaActual.setHours(0,0,0,0);
+  let BARBEROS = [];
+  let citas = [];
+  let overridesMap = {}; // { nombreBarbero: {trabaja:false, id, ...} }
+  let unsubCitas = null, unsubOverrides = null;
+
+  // Avisos web (independiente de la fecha navegada)
+  let avisosWeb = [];
+  let idsAvisosVistos = null;
+  let unsubAvisos = null;
+
+  function beep(){
+    try {
+      const ctx = new (window.AudioContext||window.webkitAudioContext)();
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.connect(g); g.connect(ctx.destination);
+      o.type='sine'; o.frequency.value=880;
+      g.gain.setValueAtTime(0.15, ctx.currentTime);
+      g.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime+0.4);
+      o.start(); o.stop(ctx.currentTime+0.4);
+    } catch(e){}
+  }
+
+  function showToast(msg){
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    clearTimeout(t._h); t._h = setTimeout(() => t.classList.remove('show'), 2200);
+  }
+
+  // ---- Barberos (una sola carga; sin campo 'orden' garantizado → ordenar en JS) ----
+  async function cargarBarberos(){
+    await authListo;
+    const snap = await getDocs(collection(db,'barberos'));
+    BARBEROS = snap.docs.map(d => ({ id:d.id, ...d.data() }))
+      .filter(b => b.activo !== false)
+      .sort((a,b) => (a.orden||0)-(b.orden||0) || (a.nombre||'').localeCompare(b.nombre||''));
+  }
+
+  // ---- Escuchas dependientes de la fecha ----
+  function escucharCitas(){
+    if (unsubCitas) unsubCitas();
+    const key = getDateKey(fechaActual);
+    unsubCitas = onSnapshotSeguro(query(collection(db,'citas'), where('fecha','==',key)), snap => {
+      citas = snap.docs.map(d => ({ id:d.id, ...d.data() }));
+      renderGrid();
+    });
+  }
+
+  function escucharOverrides(){
+    if (unsubOverrides) unsubOverrides();
+    const key = getDateKey(fechaActual);
+    unsubOverrides = onSnapshotSeguro(query(collection(db,'overrides'), where('fecha','==',key)), snap => {
+      overridesMap = {};
+      snap.docs.forEach(d => { const data = d.data(); overridesMap[data.barbero] = { ...data, id:d.id }; });
+      renderGrid();
+    });
+  }
+
+  // ---- Avisos web: citas de hoy en adelante con origen 'reserva-web' ----
+  function escucharAvisosWeb(){
+    if (unsubAvisos) unsubAvisos();
+    const hoyKey = getDateKey(new Date());
+    unsubAvisos = onSnapshotSeguro(query(collection(db,'citas'), where('fecha','>=',hoyKey)), snap => {
+      const web = snap.docs.map(d => ({ id:d.id, ...d.data() })).filter(c => c.origen === 'reserva-web');
+      const ids = new Set(web.map(c => c.id));
+      if (idsAvisosVistos !== null){
+        web.forEach(c => {
+          if (!idsAvisosVistos.has(c.id) && !avisosWeb.some(a => a.id===c.id)){
+            avisosWeb.unshift({ id:c.id, nombre:c.nombre, barbero:c.barbero, slot:c.slot, servicio:c.servicio, fecha:c.fecha, ts:c.ts||Date.now() });
+            beep(); renderAvisos();
+          }
+        });
+      }
+      idsAvisosVistos = ids;
+    });
+    if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission();
+  }
+
+  function etiquetaFechaAviso(fechaKey){
+    const hoyKey = getDateKey(new Date());
+    if (fechaKey === hoyKey) return { esFuturo:false, texto:'Hoy' };
+    const [y,m,dd] = fechaKey.split('-').map(Number);
+    const f = new Date(y, m-1, dd);
+    return { esFuturo:true, texto:`${DIAS_N[f.getDay()]} ${dd} ${MESES[m-1].slice(0,3)}` };
+  }
+
+  function renderAvisos(){
+    const cont = document.getElementById('avisos-body');
+    const badge = document.getElementById('avisos-badge');
+    badge.textContent = avisosWeb.length;
+    badge.classList.toggle('cero', avisosWeb.length === 0);
+    if (avisosWeb.length === 0){ cont.innerHTML = '<div class="avisos-vacio">Sin avisos pendientes 🎉</div>'; return; }
+    const ordenados = [...avisosWeb].sort((a,b) => {
+      const fa = etiquetaFechaAviso(a.fecha).esFuturo ? 0 : 1;
+      const fb = etiquetaFechaAviso(b.fecha).esFuturo ? 0 : 1;
+      if (fa !== fb) return fa - fb;
+      return (a.fecha||'').localeCompare(b.fecha||'');
+    });
+    let html = '', grupo = null;
+    ordenados.forEach(a => {
+      const info = etiquetaFechaAviso(a.fecha);
+      const g = info.esFuturo ? 'futuro' : 'hoy';
+      if (g !== grupo){ html += `<div class="aviso-sep">${info.esFuturo ? 'Próximos días' : 'De hoy'}</div>`; grupo = g; }
+      const etq = info.esFuturo ? `⚡ Otro día · ${info.texto}` : '✅ Hoy';
+      html += `<div class="ticket ${g}">
+        <div class="ticket-etq">${etq}</div>
+        <div class="ticket-nombre">${a.nombre||''} · ${a.barbero||''}</div>
+        <div class="ticket-sub">${a.servicio||''} · ${slot12hr(a.slot)}</div>
+        <button class="ticket-btn" onclick="atenderAviso('${a.id}')">Entendido</button>
+      </div>`;
+    });
+    cont.innerHTML = html;
+  }
+  window.atenderAviso = function(id){ avisosWeb = avisosWeb.filter(a => a.id !== id); renderAvisos(); };
+  window.abrirAvisos = function(){ document.getElementById('avisos-panel').classList.add('open'); document.getElementById('panel-backdrop').classList.add('open'); };
+  window.cerrarAvisos = function(){ document.getElementById('avisos-panel').classList.remove('open'); document.getElementById('panel-backdrop').classList.remove('open'); };
+
+  // ---- Estado del día por barbero ----
+  function esDomingo(){ return fechaActual.getDay() === 0; }
+  function noTrabajaHoy(b){
+    if (esDomingo()) return true;
+    const ov = overridesMap[b.nombre];
+    return !!(ov && ov.trabaja === false);
+  }
+
+  // ---- Encabezado (columnas de barbero) ----
+  function renderHead(){
+    const head = document.getElementById('cal-head');
+    const cols = `var(--eje-w) repeat(${BARBEROS.length}, minmax(var(--col-min-w), 1fr))`;
+    head.style.gridTemplateColumns = cols;
+    let html = '<div class="head-eje"></div>';
+    BARBEROS.forEach(b => {
+      const col = colorBarbero(b.nombre);
+      html += `<div class="head-barbero">
+        <div class="head-avatar" style="background:${col}">${iniciales(b.nombre)}</div>
+        <div class="head-nombre">${b.nombre}</div>
+      </div>`;
+    });
+    head.innerHTML = html;
+  }
+
+  // ---- Cuerpo (eje + columnas con citas posicionadas al minuto) ----
+  function renderGrid(){
+    if (!BARBEROS.length){
+      document.getElementById('cal-body').innerHTML = '<div class="cargando">Cargando barberos…</div>';
+      return;
+    }
+    renderHead();
+    const body = document.getElementById('cal-body');
+    const cols = `var(--eje-w) repeat(${BARBEROS.length}, minmax(var(--col-min-w), 1fr))`;
+    body.style.gridTemplateColumns = cols;
+
+    const altoTotal = (CIERRE_VISUAL_MIN - APERTURA_MIN) * PX_POR_MIN;
+
+    // Eje de horas
+    let ejeHtml = `<div class="body-eje" style="height:${altoTotal}px">`;
+    for (let m = APERTURA_MIN; m <= CIERRE_VISUAL_MIN; m += 60){
+      const top = (m - APERTURA_MIN) * PX_POR_MIN;
+      const [h] = minToSlot(m).split(':').map(Number);
+      const ap = h>=12?'p. m.':'a. m.'; const h12 = h%12||12;
+      ejeHtml += `<div class="eje-hora" style="top:${top}px">${h12}:00<span class="ampm">${ap}</span></div>`;
+    }
+    ejeHtml += '</div>';
+
+    // Columnas de barbero
+    let colsHtml = '';
+    const dia = fechaActual.getDay();
+    BARBEROS.forEach(b => {
+      let c = `<div class="body-col" style="height:${altoTotal}px">`;
+      // líneas guía cada 10 min
+      for (let m = APERTURA_MIN; m <= CIERRE_VISUAL_MIN; m += 10){
+        const top = (m - APERTURA_MIN) * PX_POR_MIN;
+        const esHora = (m % 60) === 0;
+        c += `<div class="linea${esHora?' hora':''}" style="top:${top}px"></div>`;
+      }
+      if (noTrabajaHoy(b)){
+        c += `<div class="no-disp" style="top:0;height:${altoTotal}px"><span>${esDomingo()?'Domingo':'No trabaja hoy'}</span></div>`;
+      } else {
+        // citas del barbero
+        citas.filter(x => x.barbero === b.nombre).forEach(cita => {
+          const ini = slotToMin(cita.slot);
+          const dur = durCita(cita);
+          const top = (ini - APERTURA_MIN) * PX_POR_MIN;
+          const alto = Math.max(dur * PX_POR_MIN - 2, 20);
+          const esWeb = cita.origen === 'reserva-web';
+          const cls = esWeb ? 'web' : 'normal';
+          const tag = esWeb ? '🌐' : '🏠';
+          c += `<div class="cita ${cls}" style="top:${top}px;height:${alto}px">
+            <span class="cita-tag">${tag}</span>
+            <div class="cita-rango">${min12hr(ini)} – ${min12hr(ini+dur)}</div>
+            <div class="cita-nombre">${cita.nombre||''}</div>
+            <div class="cita-servicio">${cita.servicio||''}</div>
+          </div>`;
+        });
+      }
+      c += '</div>';
+      colsHtml += c;
+    });
+
+    body.innerHTML = ejeHtml + colsHtml;
+    pintarAhora(altoTotal);
+  }
+
+  // línea de "ahora" (solo si estamos viendo hoy y dentro del rango)
+  function pintarAhora(altoTotal){
+    const hoy = new Date(); hoy.setHours(0,0,0,0);
+    if (fechaActual.getTime() !== hoy.getTime()) return;
+    const n = new Date();
+    const nowMin = n.getHours()*60 + n.getMinutes();
+    if (nowMin < APERTURA_MIN || nowMin > CIERRE_VISUAL_MIN) return;
+    const top = (nowMin - APERTURA_MIN) * PX_POR_MIN;
+    const body = document.getElementById('cal-body');
+    const line = document.createElement('div');
+    line.className = 'ahora-line';
+    line.style.top = top + 'px';
+    line.style.left = 'var(--eje-w)';
+    line.innerHTML = '<div class="ahora-dot"></div>';
+    body.appendChild(line);
+  }
+
+  // ---- Navegación de fecha ----
+  function actualizarFechaLbl(){
+    const d = fechaActual;
+    document.getElementById('fecha-d1').textContent = `${DIAS_N[d.getDay()]} ${d.getDate()} de ${MESES[d.getMonth()]}`;
+    const hoy = new Date(); hoy.setHours(0,0,0,0);
+    const diff = Math.round((d - hoy)/86400000);
+    document.getElementById('fecha-d2').textContent = diff===0?'Hoy':diff===1?'Mañana':diff===-1?'Ayer':'';
+  }
+  function recargarDia(){
+    actualizarFechaLbl();
+    escucharCitas();
+    escucharOverrides();
+    renderGrid();
+  }
+  window.cambiarDia = function(delta){ fechaActual.setDate(fechaActual.getDate()+delta); recargarDia(); };
+  window.irHoy = function(){ fechaActual = new Date(); fechaActual.setHours(0,0,0,0); recargarDia(); };
+
+  // ---- Arranque ----
+  (async function init(){
+    await cargarBarberos();
+    document.getElementById('cargando')?.remove();
+    actualizarFechaLbl();
+    renderGrid();
+    escucharCitas();
+    escucharOverrides();
+    escucharAvisosWeb();
+    // scroll a las 10am (arriba) ya es el default; refrescar "ahora" cada minuto
+    setInterval(() => renderGrid(), 60000);
+  })();
+</script>
+</body>
+</html>
