@@ -6,7 +6,7 @@
   <meta http-equiv="Pragma" content="no-cache"/>
   <meta http-equiv="Expires" content="0"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Barbería Garage — Reservar cita</title>
+  <title>The Barber One — Reservar cita</title>
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap');
     * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -114,7 +114,7 @@
 <body>
 <div class="app">
   <div class="header">
-    <div class="logo">Barbería Garage</div>
+    <div class="logo">The Barber One</div>
     <div class="header-sub">Agenda tu cita</div>
   </div>
 
@@ -173,34 +173,31 @@
   <!-- PASO 5: RESUMEN -->
   <div class="section" id="sec-5">
     <div class="section-title">Confirma tu cita</div>
-    <div class="section-sub">Revisa los detalles antes de enviar</div>
-    <div class="pendiente-card">
-      <div class="pendiente-titulo">⏳ Sujeto a confirmación</div>
-      <div class="pendiente-sub">Tu cita quedará confirmada una vez que nuestro equipo la apruebe. Te avisaremos pronto.</div>
-    </div>
+    <div class="section-sub">Revisa los detalles antes de reservar</div>
     <div class="resumen-card" id="resumen-card"></div>
-    <button class="btn-primary" onclick="enviarSolicitud()">Enviar solicitud</button>
+    <button class="btn-primary" onclick="enviarSolicitud()">Reservar cita</button>
     <button class="btn-secondary" onclick="irPaso(4)">← Regresar</button>
   </div>
 
   <!-- CONFIRMACION FINAL -->
   <div class="confirmacion" id="confirmacion">
     <div class="conf-icon">✅</div>
-    <div class="conf-titulo">¡Solicitud enviada!</div>
-    <div class="conf-sub">Tu solicitud fue recibida. Nuestro equipo la revisará y te confirmaremos a la brevedad.</div>
+    <div class="conf-titulo">¡Cita confirmada!</div>
+    <div class="conf-sub">Tu cita quedó agendada. ¡Te esperamos!</div>
     <div class="conf-card" id="conf-resumen"></div>
-    <a href="https://wa.me/522223961602" target="_blank" class="btn-primary" style="display:block;text-align:center;text-decoration:none;margin-top:1rem;background:#25d366;color:#fff;">💬 Contactar por WhatsApp</a>
-    <button class="btn-primary" onclick="reiniciar()" style="margin-top:8px;">Agendar otra cita</button>
+    <button class="btn-primary" onclick="reiniciar()" style="margin-top:1rem;">Reservar otra cita</button>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
-<a href="https://wa.me/522223961602" target="_blank" style="position:fixed;bottom:1.5rem;right:1rem;background:#25d366;border-radius:30px;display:flex;align-items:center;gap:8px;padding:12px 18px;text-decoration:none;box-shadow:0 4px 12px rgba(37,211,102,.4);z-index:50;font-size:14px;font-weight:600;color:#fff;transition:transform .15s ease;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">💬 Escríbenos por WhatsApp</a>
+<a href="https://wa.me/522223424630" target="_blank" style="position:fixed;bottom:1.5rem;right:1rem;background:#25d366;border-radius:30px;display:flex;align-items:center;gap:8px;padding:12px 18px;text-decoration:none;box-shadow:0 4px 12px rgba(37,211,102,.4);z-index:50;font-size:14px;font-weight:600;color:#fff;transition:transform .15s ease;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">💬 Escríbenos por WhatsApp</a>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
 import { getFirestore, collection, addDoc, onSnapshot, query, where, orderBy, getDocs, doc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
+import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
+import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-functions.js";
 
 // ##############################################################
 // #                                                            #
@@ -227,47 +224,53 @@ const CONFIG = {
 const firebaseConfig = CONFIG.firebase;
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const auth = getAuth(app);
+
+// Cloud Function de disponibilidad. La región DEBE coincidir con la del
+// despliegue (us-central1), aunque la base de datos esté en México.
+const functions = getFunctions(app, "us-central1");
+const fnDisponibilidad = httpsCallable(functions, "disponibilidad");
+const fnBarberosPublicos = httpsCallable(functions, "barberosPublicos");
+
+// ================== LOGIN ANÓNIMO (público, sin fricción) ==================
+// El cliente NO se registra ni ve nada. Firebase le da una identidad temporal
+// para que las reglas de seguridad permitan CREAR su cita. Sin esto, con las
+// reglas activas, reservar.html no podría guardar nada.
+let _resolveAuth;
+const authListo = new Promise(res => { _resolveAuth = res; });
+
+onAuthStateChanged(auth, user => {
+  if (user) { _resolveAuth(true); }
+});
+
+async function iniciarSesionAnonima(){
+  if (auth.currentUser) return;
+  try {
+    await signInAnonymously(auth);
+  } catch (e) {
+    console.error("Fallo el login anónimo:", e.code, e.message);
+  }
+}
+iniciarSesionAnonima();
+// ===========================================================================
 
 const DIAS_N = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
 const DIAS_CORTO = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
 const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
 const MESES_CORTO = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
 
-function duracionLabel(slots){
-  return slots===1?'30 min':slots===2?'1 hora':slots===3?'1.5 horas':'2 horas';
+function duracionLabel(min){
+  if (!min) return '';
+  if (min < 60) return min + ' min';
+  const h = Math.floor(min / 60), m = min % 60;
+  return m === 0 ? h + ' h' : h + ' h ' + m + ' min';
 }
 
-function slotToMin(s){ const [h,m]=s.split(':').map(Number); return h*60+m; }
-function minToSlot(m){ return `${String(Math.floor(m/60)).padStart(2,'0')}:${m%60===0?'00':'30'}`; }
-function slot12hr(s){ const [h,m]=s.split(':').map(Number); const ap=h>=12?'PM':'AM'; const h12=h%12||12; return `${h12}:${m===0?'00':'30'} ${ap}`; }
+function slot12hr(s){ const [h,m]=s.split(':').map(Number); const ap=h>=12?'PM':'AM'; const h12=h%12||12; return `${h12}:${String(m).padStart(2,'0')} ${ap}`; }
 function getDateKey(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.style.display='block'; setTimeout(()=>t.style.display='none',2500); }
 
-// ---- Horarios efectivos (respetan cierre anticipado / domingo especial / excepciones) ----
-function inicioEfectivo(b, dia){
-  if (b.domingoEspecial && dia===0) return b.domingoInicio || b.inicio;
-  return b.inicio;
-}
-function cierreAplicaHoy(b, dia){
-  if (!b.cierreDesde) return false;
-  if (b.domingoEspecial && dia===0) return false;
-  if (b.cierreDia === undefined || b.cierreDia === null || b.cierreDia === '') return true;
-  return Number(b.cierreDia) === dia;
-}
-function finEfectivo(b, dia, ov){
-  if (b.domingoEspecial && dia===0) return b.domingoFin || b.fin;
-  if (cierreAplicaHoy(b, dia) && !(ov && ov.cierreAbierto)) return b.cierreDesde;
-  return b.fin;
-}
-function descansaHoy(b, dia, ov){
-  if (b.especial) return false;
-  const normal = (b.descanso||[]).includes(dia);
-  if (normal && ov && ov.trabaja) return false;
-  return normal;
-}
-
 let BARBEROS = [];
-let unsubBarberos = null;
 let SERVICIOS = [];
 let unsubServicios = null;
 
@@ -276,14 +279,18 @@ let prefBarbero = 'cualquiera';
 let barberoExpandido = false;
 let pasoActual = 1;
 
-function escucharBarberos(){
-  if (unsubBarberos) unsubBarberos();
-  unsubBarberos = onSnapshot(query(collection(db,'barberos'), orderBy('orden')), snap => {
-    BARBEROS = snap.docs.map(d => ({ id:d.id, ...d.data() })).filter(b => b.activo !== false);
-    renderServiciosGrid();
-    renderFechas();
-    if (pasoActual === 3) { renderBarberoChips(); cargarHorarios(); }
-  });
+async function cargarBarberos(){
+  try {
+    await authListo; // identidad anónima antes de llamar
+    const res = await fnBarberosPublicos();
+    BARBEROS = (res.data && res.data.barberos) ? res.data.barberos : [];
+  } catch (e) {
+    console.error('Error al cargar barberos:', e);
+    BARBEROS = [];
+  }
+  renderServiciosGrid();
+  renderFechas();
+  if (pasoActual === 3) { renderBarberoChips(); cargarHorarios(); }
 }
 
 function escucharServicios(){
@@ -322,7 +329,7 @@ function renderServiciosGrid(){
     card.innerHTML = `
       ${tieneDesc ? `<button type="button" class="info-btn" onclick="event.stopPropagation(); toggleInfo('${descId}')" title="Ver qué incluye">ⓘ</button>` : ''}
       <div class="srv-nombre">${s.nombre}</div>
-      <div class="srv-duracion">${duracionLabel(s.slots)}${s.precio?' · $'+s.precio:''}</div>
+      <div class="srv-duracion">${duracionLabel(s.durMin)}${s.precio?' · $'+s.precio:''}</div>
       ${tieneDesc ? `<div class="srv-desc" id="${descId}">${s.descripcion}</div>` : ''}
     `;
     card.onclick = () => {
@@ -345,7 +352,7 @@ function renderFechas(){
   for (let i=0; i<14; i++){
     const d = new Date(); d.setDate(d.getDate()+i); d.setHours(0,0,0,0);
     const diaSem = d.getDay();
-    const hayBarbero = BARBEROS.some(b => !(!b.especial && (b.descanso||[]).includes(diaSem)));
+    const hayBarbero = diaSem !== 0; // The Barber One: cerrado solo domingo
     const card = document.createElement('div'); card.className = 'fecha-card' + (hayBarbero ? '' : ' ocupado');
     card.innerHTML = `<div class="fecha-dia-num">${d.getDate()}</div><div class="fecha-dia-nom">${DIAS_CORTO[diaSem]}</div><div class="fecha-mes">${MESES_CORTO[d.getMonth()]}</div>`;
     if (hayBarbero) {
@@ -413,62 +420,25 @@ async function cargarHorarios(){
   document.getElementById('btn-3').disabled = true;
 
   const key = getDateKey(selFecha);
-  const diaSem = selFecha.getDay();
 
-  const snapCitas = await getDocs(query(collection(db,'citas'), where('fecha','==',key)));
-  const citasDia = snapCitas.docs.map(d => ({ id:d.id, ...d.data() }));
-
-  const snapSol = await getDocs(query(collection(db,'solicitudes'), where('fecha','==',key), where('estado','in',['pendiente','aprobada'])));
-  const solicitudesDia = snapSol.docs.map(d => ({ id:d.id, ...d.data() }));
-
-  const snapOv = await getDocs(query(collection(db,'overrides'), where('fecha','==',key)));
-  const overridesHoy = {};
-  snapOv.docs.forEach(d => { overridesHoy[d.data().barbero] = d.data(); });
-
-  const slotsNecesarios = selServicio.slots;
-  const elegibleServicio = b => !selServicio.barberosPermitidos || selServicio.barberosPermitidos.length===0 || selServicio.barberosPermitidos.includes(b.nombre);
-  const candidatos = prefBarbero==='cualquiera'
-    ? BARBEROS.filter(b => elegibleServicio(b) && !b.soloDirecto)
-    : BARBEROS.filter(b => b.nombre===prefBarbero);
-
-  const slotsDisp = [];
-  const allSlots = [];
-  for (let m=9*60; m<=20*60; m+=30) allSlots.push(minToSlot(m));
-
-  const ahora = new Date();
-  const ahoraMin = ahora.getHours()*60 + ahora.getMinutes();
-  const esHoy = getDateKey(selFecha) === getDateKey(new Date());
-
-  // Ventana pública: Lun-Sáb 11:00am-8:00pm (última cita 7:30pm) · Domingo 12:00pm-5:00pm (última cita 4:30pm)
-  const esDomingo = diaSem === 0;
-  const pubInicio = esDomingo ? 12*60 : 11*60;
-  const pubUltimaHora = esDomingo ? 16*60+30 : 19*60+30;
-  const pubCierre = esDomingo ? 17*60 : 20*60;
-
-  allSlots.forEach(slot => {
-    const slotMin = slotToMin(slot);
-    if (slotMin < pubInicio) return;
-    if (slotMin + slotsNecesarios*30 > pubCierre) return;
-    if (slotMin > pubUltimaHora) return;
-    if (esHoy && slotMin <= ahoraMin) return;
-
-    const libre = candidatos.find(b => {
-      const ov = overridesHoy[b.nombre];
-      if (descansaHoy(b, diaSem, ov)) return false;
-      const ini = slotToMin(inicioEfectivo(b, diaSem));
-      const fin = slotToMin(finEfectivo(b, diaSem, ov));
-      if (slotMin < ini || slotMin + slotsNecesarios*30 > fin) return false;
-      for (let s=0; s<slotsNecesarios; s++) {
-        const checkMin = slotMin + s*30;
-        const ocupado = citasDia.some(c => c.barbero===b.nombre && checkMin>=slotToMin(c.slot) && checkMin<slotToMin(c.slot)+(c.slots||1)*30);
-        const reservado = solicitudesDia.some(c => c.barbero===b.nombre && checkMin>=slotToMin(c.slot) && checkMin<slotToMin(c.slot)+(c.slots||1)*30);
-        if (ocupado || reservado) return false;
-      }
-      return true;
+  // Pedimos los huecos al servidor. La función lee barberos/citas/overrides
+  // del lado servidor y devuelve SOLO los horarios libres: nada de nómina
+  // ni de teléfonos de otros clientes llega al navegador.
+  let slotsDisp = [];
+  try {
+    await authListo; // asegura identidad anónima antes de llamar
+    const res = await fnDisponibilidad({
+      fecha: key,
+      durMin: selServicio.durMin,
+      barberosPermitidos: selServicio.barberosPermitidos || [],
+      prefBarbero: prefBarbero
     });
-
-    if (libre) slotsDisp.push({ slot, barbero: libre.nombre });
-  });
+    slotsDisp = (res.data && res.data.slots) ? res.data.slots : [];
+  } catch (e) {
+    console.error('Error al consultar disponibilidad:', e);
+    cont.innerHTML = '<div class="no-disponible">No se pudo cargar la disponibilidad. Intenta de nuevo.</div>';
+    return;
+  }
 
   if (!slotsDisp.length) {
     const quien = prefBarbero==='cualquiera' ? '' : ` con ${prefBarbero}`;
@@ -519,7 +489,7 @@ function renderResumen(){
   const d = selFecha;
   document.getElementById('resumen-card').innerHTML = `
     <div class="res-row"><span class="res-lbl">Servicio</span><span class="res-val">${selServicio.nombre}</span></div>
-    <div class="res-row"><span class="res-lbl">Duración</span><span class="res-val">${duracionLabel(selServicio.slots)}</span></div>
+    <div class="res-row"><span class="res-lbl">Duración</span><span class="res-val">${duracionLabel(selServicio.durMin)}</span></div>
     <div class="res-row"><span class="res-lbl">Fecha</span><span class="res-val">${DIAS_N[d.getDay()]} ${d.getDate()} de ${MESES[d.getMonth()]}</span></div>
     <div class="res-row"><span class="res-lbl">Horario</span><span class="res-val">${slot12hr(selSlot)}</span></div>
     <div class="res-row"><span class="res-lbl">Barbero</span><span class="res-val">${selBarbero}</span></div>
@@ -536,10 +506,11 @@ window.enviarSolicitud = async function(){
   const d = selFecha;
 
   try {
-    // DEMO / flujo nuevo: agenda DIRECTO como cita (sin aprobación)
+    await authListo; // asegura identidad anónima antes de escribir (reglas)
+    // Agenda DIRECTO como cita confirmada (sin aprobación manual)
     await addDoc(collection(db,'citas'), {
       nombre, telefono: tel, comentario: com,
-      servicio: selServicio.nombre, slots: selServicio.slots,
+      servicio: selServicio.nombre, durMin: selServicio.durMin,
       fecha: getDateKey(d), slot: selSlot,
       barbero: selBarbero, tipo: 'normal', confirmado: true,
       origen: 'reserva-web', ts: Date.now()
@@ -574,7 +545,7 @@ window.reiniciar = function(){
   irPaso(1);
 };
 
-escucharBarberos();
+cargarBarberos();
 escucharServicios();
 </script>
 </body>
