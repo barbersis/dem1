@@ -267,6 +267,13 @@ function duracionLabel(min){
 }
 
 function slot12hr(s){ const [h,m]=s.split(':').map(Number); const ap=h>=12?'PM':'AM'; const h12=h%12||12; return `${h12}:${String(m).padStart(2,'0')} ${ap}`; }
+// Texto del barbero para MOSTRAR al cliente. Si eligió "Cualquiera",
+// no revelamos a quién le tocó: se muestra genérico. Si pidió a alguien
+// por nombre, se muestra ese nombre. (La cita SIEMPRE se guarda con el
+// barbero real, esto es solo lo visible.)
+function barberoLabel(){
+  return prefBarbero === 'cualquiera' ? 'Primer barbero disponible' : selBarbero;
+}
 function getDateKey(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
 function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.style.display='block'; setTimeout(()=>t.style.display='none',2500); }
 
@@ -500,7 +507,7 @@ function renderResumen(){
     <div class="res-row"><span class="res-lbl">Duración</span><span class="res-val">${duracionLabel(selServicio.durMin)}</span></div>
     <div class="res-row"><span class="res-lbl">Fecha</span><span class="res-val">${DIAS_N[d.getDay()]} ${d.getDate()} de ${MESES[d.getMonth()]}</span></div>
     <div class="res-row"><span class="res-lbl">Horario</span><span class="res-val">${slot12hr(selSlot)}</span></div>
-    <div class="res-row"><span class="res-lbl">Barbero</span><span class="res-val">${selBarbero}</span></div>
+    <div class="res-row"><span class="res-lbl">Barbero</span><span class="res-val">${barberoLabel()}</span></div>
     <div class="res-row"><span class="res-lbl">Nombre</span><span class="res-val">${nombre}</span></div>
     ${tel?`<div class="res-row"><span class="res-lbl">Teléfono</span><span class="res-val">${tel}</span></div>`:''}
     ${com?`<div class="res-row"><span class="res-lbl">Comentario</span><span class="res-val">${com}</span></div>`:''}
@@ -528,7 +535,7 @@ window.enviarSolicitud = async function(){
       <div class="res-row"><span class="res-lbl">Servicio</span><span class="res-val">${selServicio.nombre}</span></div>
       <div class="res-row"><span class="res-lbl">Fecha</span><span class="res-val">${DIAS_N[d.getDay()]} ${d.getDate()} de ${MESES[d.getMonth()]}</span></div>
       <div class="res-row"><span class="res-lbl">Horario reservado</span><span class="res-val">${slot12hr(selSlot)}</span></div>
-      <div class="res-row"><span class="res-lbl">Barbero</span><span class="res-val">${selBarbero}</span></div>
+      <div class="res-row"><span class="res-lbl">Barbero</span><span class="res-val">${barberoLabel()}</span></div>
       <div class="res-row"><span class="res-lbl">Nombre</span><span class="res-val">${nombre}</span></div>
     `;
 
