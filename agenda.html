@@ -385,6 +385,20 @@ textarea.tbo-campo{ min-height:80px; padding: var(--tbo-e2) var(--tbo-e3); line-
     }
     .cita.normal { background:var(--normal-bg); border-left-color:var(--normal); }
     .cita.web    { background:var(--web-bg);    border-left-color:var(--web); }
+    /* Cita FIJA: el cliente solicitó a ESTE barbero por nombre. Recepción no
+       debe reasignarla. Se distingue con un anillo morado y candado. */
+    .cita.fija {
+      border-left-color:#7c3aed;
+      box-shadow: 0 0 0 2px #7c3aed inset, var(--shadow-sm);
+    }
+    .cita-candado {
+      position:absolute; top:4px; right:20px; font-size:10px;
+    }
+    .c-fija-check {
+      display:flex; align-items:center; gap:8px; margin-top:10px;
+      font-size:13px; font-weight:500; color:var(--text); cursor:pointer;
+    }
+    .c-fija-check input { width:16px; height:16px; accent-color:#7c3aed; cursor:pointer; }
     .cita-rango  { font-size:10.5px; color:var(--text-muted); font-weight:600; }
     .cita-nombre { font-size:12px; font-weight:700; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .cita-servicio { font-size:10.5px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
@@ -689,6 +703,11 @@ textarea.tbo-campo{ min-height:80px; padding: var(--tbo-e2) var(--tbo-e3); line-
 
       <label>Nota <span style="font-weight:400;color:#aaa;">(opcional)</span></label>
       <textarea id="c-comentario" rows="2" placeholder="Comentario interno"></textarea>
+
+      <label class="c-fija-check">
+        <input type="checkbox" id="c-fija" />
+        <span>🔒 Solicitó a este barbero (no reasignar)</span>
+      </label>
 
       <div class="msg" id="citaModalMsg"></div>
 
@@ -1041,12 +1060,15 @@ textarea.tbo-campo{ min-height:80px; padding: var(--tbo-e2) var(--tbo-e3); line-
           const top = (ini - APERTURA_MIN) * PX_POR_MIN;
           const alto = Math.max(dur * PX_POR_MIN - 2, 20);
           const esWeb = cita.origen === 'reserva-web';
-          const cls = esWeb ? 'web' : 'normal';
+          const esFija = cita.fijo === true;
+          const cls = (esWeb ? 'web' : 'normal') + (esFija ? ' fija' : '');
           const tag = esWeb ? '🌐' : '🏠';
           const cap = horaCaptura(cita.ts);
           const capHtml = cap ? `<div class="cita-capturada">🕒 ${esWeb?'Reservó':'Capturó'} ${cap}</div>` : '';
+          const candadoHtml = esFija ? `<span class="cita-candado" title="Barbero solicitado — no reasignar">🔒</span>` : '';
           c += `<div class="cita ${cls}" style="top:${top}px;height:${alto}px" onclick="event.stopPropagation();abrirEditarCita('${cita.id}')">
             <span class="cita-tag">${tag}</span>
+            ${candadoHtml}
             <div class="cita-rango">${min12hr(ini)} – ${min12hr(ini+dur)}</div>
             <div class="cita-nombre">${cita.nombre||''}</div>
             <div class="cita-servicio">${cita.servicio||''}</div>
@@ -1200,6 +1222,7 @@ textarea.tbo-campo{ min-height:80px; padding: var(--tbo-e2) var(--tbo-e3); line-
     document.getElementById('c-telefono').value = datos.telefono || '';
     document.getElementById('c-comentario').value = datos.comentario || '';
     document.getElementById('c-hora').value = datos.slot || '';
+    document.getElementById('c-fija').checked = (datos.fijo === true);
 
     poblarServicios(document.getElementById('c-servicio'), datos.servicio || '');
     poblarBarberos(document.getElementById('c-barbero'), datos.barbero || '', filtroDeOpcionServicio());
@@ -1224,6 +1247,7 @@ textarea.tbo-campo{ min-height:80px; padding: var(--tbo-e2) var(--tbo-e3); line-
     const durMin = Number(selServicio.options[selServicio.selectedIndex]?.dataset.durmin) || 30;
     const barbero = document.getElementById('c-barbero').value;
     const horaStr = document.getElementById('c-hora').value;
+    const esFija = document.getElementById('c-fija').checked;
 
     if (!nombre){ msg.className='msg error'; msg.textContent='Falta el nombre del cliente.'; return; }
     if (!servicioNombre){ msg.className='msg error'; msg.textContent='Elige un servicio.'; return; }
@@ -1249,7 +1273,7 @@ textarea.tbo-campo{ min-height:80px; padding: var(--tbo-e2) var(--tbo-e3); line-
       nombre, telefono, comentario,
       servicio: servicioNombre, durMin,
       fecha: getDateKey(fechaActual), slot: horaStr,
-      barbero, tipo: 'normal', confirmado: true
+      barbero, tipo: 'normal', confirmado: true, fijo: esFija
     };
 
     try {

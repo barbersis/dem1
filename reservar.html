@@ -541,25 +541,36 @@ window.enviarSolicitud = async function(){
     ]);
     // Agenda DIRECTO como cita confirmada (sin aprobación manual)
     // Normalizamos al shape EXACTO que exige la regla citaValida():
-    //  - barbero SIEMPRE string (la Cloud Function puede devolver el num como número)
-    //  - slot con dos dígitos en la hora (regex ^\d{2}:\d{2}$: "9:05" -> "09:05")
-    //  - durMin como número
-    const slotNorm = String(selSlot).replace(/^(\d):/, '0$1:');
-    const barberoNorm = String(selBarbero);
+    //  - barbero SIEMPRE string
+    //  - slot como HH:MM con dos dígitos en hora Y minuto (regex ^\d{2}:\d{2}$)
+    //  - durMin como número, comentario como string (nunca undefined)
+    function normSlot(s){
+      const m = String(s).match(/(\d{1,2}):(\d{1,2})/);
+      if (!m) return String(s);
+      return String(m[1]).padStart(2,'0') + ':' + String(m[2]).padStart(2,'0');
+    }
+    const slotNorm = normSlot(selSlot);
+    const barberoNorm = String(selBarbero || '');
     const durNorm = Number(selServicio.durMin);
+    const comNorm = String(com || '');
+    const nombreNorm = String(nombre || '');
+    const telNorm = String(tel || '');
     // Diagnóstico temporal: si la regla vuelve a rechazar, esto dice qué campo
     console.log('Cita a enviar →', {
-      nombre:[nombre, nombre.length], telefono:[tel, tel.length],
-      comentario:[com, com.length], servicio:[selServicio.nombre],
+      nombre:[nombreNorm, nombreNorm.length], telefono:[telNorm, telNorm.length],
+      comentario:[comNorm, comNorm.length], servicio:[selServicio.nombre, (selServicio.nombre||'').length],
       durMin:[durNorm, typeof durNorm], fecha:[getDateKey(d)],
       slot:[slotNorm], barbero:[barberoNorm, typeof selBarbero]
     });
+    // "fijo": el cliente pidió a ESTE barbero por nombre (no "cualquiera").
+    // Recepción no debe reasignar la cita a otro barbero.
+    const esFijo = (prefBarbero !== 'cualquiera');
     await addDoc(collection(db,'citas'), {
-      nombre, telefono: tel, comentario: com,
+      nombre: nombreNorm, telefono: telNorm, comentario: comNorm,
       servicio: selServicio.nombre, durMin: durNorm,
       fecha: getDateKey(d), slot: slotNorm,
       barbero: barberoNorm, tipo: 'normal', confirmado: true,
-      origen: 'reserva-web', ts: Date.now()
+      origen: 'reserva-web', fijo: esFijo, ts: Date.now()
     });
 
     document.getElementById('conf-resumen').innerHTML = `
