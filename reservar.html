@@ -196,7 +196,7 @@
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
 import { getFirestore, collection, addDoc, onSnapshot, query, where, orderBy, getDocs, doc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
-import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
+import { getAuth, initializeAuth, inMemoryPersistence, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
 import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-functions.js";
 
 // ##############################################################
@@ -224,7 +224,20 @@ const CONFIG = {
 const firebaseConfig = CONFIG.firebase;
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
-const auth = getAuth(app);
+// IMPORTANTE: reservar.html y agenda.html corren en el MISMO dominio y
+// comparten el mismo Firebase. Si reservar usara el Auth normal (persistente),
+// su sesión anónima SOBRESCRIBIRÍA la sesión maestra de la agenda en el mismo
+// navegador — la recepción tendría que volver a loguearse cada vez que un
+// cliente reserva. Para evitarlo, aquí creamos una instancia de Auth AISLADA
+// con persistencia SOLO en memoria: vive mientras la pestaña de reservar está
+// abierta y no toca el almacenamiento que usa la agenda.
+let auth;
+try {
+  auth = initializeAuth(app, { persistence: inMemoryPersistence });
+} catch (e) {
+  // Si ya se inicializó (recarga en caliente), cae al getAuth normal
+  auth = getAuth(app);
+}
 
 // Cloud Function de disponibilidad. La región DEBE coincidir con la del
 // despliegue (us-central1), aunque la base de datos esté en México.
@@ -555,13 +568,6 @@ window.enviarSolicitud = async function(){
     const comNorm = String(com || '');
     const nombreNorm = String(nombre || '');
     const telNorm = String(tel || '');
-    // Diagnóstico temporal: si la regla vuelve a rechazar, esto dice qué campo
-    console.log('Cita a enviar →', {
-      nombre:[nombreNorm, nombreNorm.length], telefono:[telNorm, telNorm.length],
-      comentario:[comNorm, comNorm.length], servicio:[selServicio.nombre, (selServicio.nombre||'').length],
-      durMin:[durNorm, typeof durNorm], fecha:[getDateKey(d)],
-      slot:[slotNorm], barbero:[barberoNorm, typeof selBarbero]
-    });
     // "fijo": el cliente pidió a ESTE barbero por nombre (no "cualquiera").
     // Recepción no debe reasignar la cita a otro barbero.
     const esFijo = (prefBarbero !== 'cualquiera');

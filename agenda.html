@@ -353,7 +353,7 @@ textarea.tbo-campo{ min-height:80px; padding: var(--tbo-e2) var(--tbo-e3); line-
       position:sticky; top:0; z-index:20; display:grid; background:var(--surface);
       border-bottom:1px solid var(--border-strong); box-shadow: var(--shadow-sm);
     }
-    .head-eje { border-right:1px solid var(--border); }
+    .head-eje { border-right:1px solid var(--border); position:sticky; left:0; z-index:22; background:var(--surface); }
     .head-barbero {
       padding:10px 6px 8px; text-align:center; border-right:1px solid var(--border);
       display:flex; flex-direction:column; align-items:center; gap:5px;
@@ -365,7 +365,7 @@ textarea.tbo-campo{ min-height:80px; padding: var(--tbo-e2) var(--tbo-e3); line-
     .head-nombre { font-size:12.5px; font-weight:700; text-transform:uppercase; letter-spacing:.3px; }
 
     .cal-body { position:relative; display:grid; padding-top:14px; }
-    .body-eje { position:relative; border-right:1px solid var(--border); }
+    .body-eje { position:relative; border-right:1px solid var(--border); position:sticky; left:0; z-index:15; background:var(--surface); }
     .eje-hora {
       position:absolute; left:0; right:0; padding-right:6px; text-align:right;
       font-size:11px; color:var(--text-muted); font-weight:600; transform:translateY(-7px);
@@ -632,6 +632,55 @@ textarea.tbo-campo{ min-height:80px; padding: var(--tbo-e2) var(--tbo-e3); line-
       .tbo-app-entra .topbar, .tbo-app-entra .cal-wrap, #accesoOverlay .box { animation:none !important; }
       .cal-body { transition:none !important; }
     }
+
+    /* ============================================================
+       RESPONSIVE MÓVIL (≤640px) — la agenda nació para escritorio;
+       aquí se adapta a teléfono sin tocar el motor.
+       ============================================================ */
+    @media (max-width: 640px) {
+      /* Topbar: se apila en dos filas para que quepan todos los controles */
+      .topbar {
+        flex-wrap: wrap; gap:8px 10px; padding:10px 12px;
+        align-items:center;
+      }
+      .tbo-marca { order:1; }
+      .tbo-marca__nombre { font-size:14px; letter-spacing:.16em; }
+      .salir-btn { order:2; margin-left:auto; }
+      .avisos-fab { order:3; }
+      .config-btn { order:4; }
+      /* Segunda fila: navegación de fecha ocupa todo el ancho */
+      .nav-fecha { order:5; width:100%; margin-left:0; justify-content:space-between; gap:4px; }
+      .fecha-lbl { flex:1; }
+      .fecha-lbl .d1 { font-size:13px; }
+      .leyenda-pop { left:auto; right:0; width:min(280px, calc(100vw - 24px)); }
+
+      /* Grid: columnas más angostas y horas más finas para ganar espacio */
+      :root, body {
+        --col-min-w: 116px;
+        --eje-w: 44px;
+        --px-por-min: 1.15;   /* ~69px por hora: cabe más día en pantalla */
+      }
+      .head-avatar { width:36px; height:36px; font-size:13px; }
+      .head-nombre { font-size:11px; }
+      .ov-chip { font-size:10px; padding:2px 8px; }
+      .eje-hora { font-size:10px; }
+
+      /* Citas: un pelín más compactas */
+      .cita { padding:4px 6px; font-size:10.5px; }
+      .cita-nombre { font-size:11.5px; }
+      .cita-servicio { font-size:9.5px; }
+
+      /* Modal: ocupa toda la pantalla, más cómodo de teclear en móvil */
+      #citaModal { padding:0; align-items:flex-end; }
+      #citaModal .box { max-width:100%; border-radius:20px 20px 0 0; max-height:94vh; }
+      #citaModal .acciones { position:sticky; bottom:0; background:#fff; }
+
+      /* Paneles laterales a ancho casi completo */
+      .avisos-panel { width:min(360px, 92vw); }
+
+      /* Acceso: la tarjeta usa casi todo el ancho */
+      #accesoOverlay .box { max-width:100%; }
+    }
   </style>
 </head>
 <body class="tbo">
@@ -699,7 +748,7 @@ textarea.tbo-campo{ min-height:80px; padding: var(--tbo-e2) var(--tbo-e3); line-
         </div>
         <div class="tbo-marca__sub">Agenda · Acceso de recepción</div>
       </div>
-      <input id="accesoInput" type="password" placeholder="Clave" inputmode="numeric" />
+      <input id="accesoInput" type="password" placeholder="Clave" autocomplete="off" />
       <div class="msg" id="accesoMsg"></div>
       <button id="accesoBtn">Entrar</button>
     </div>
@@ -810,7 +859,7 @@ textarea.tbo-campo{ min-height:80px; padding: var(--tbo-e2) var(--tbo-e3); line-
     getFirestore, collection, onSnapshot, query, where, doc, getDoc, setDoc, addDoc, updateDoc, deleteDoc
   } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
   import {
-    getAuth, setPersistence, browserLocalPersistence, onAuthStateChanged, signInWithEmailAndPassword
+    getAuth, setPersistence, browserLocalPersistence, onAuthStateChanged, signInWithEmailAndPassword, signOut
   } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
 
   // ##############################################################
@@ -861,6 +910,14 @@ textarea.tbo-campo{ min-height:80px; padding: var(--tbo-e2) var(--tbo-e3); line-
 
   setPersistence(auth, browserLocalPersistence).then(() => {
     onAuthStateChanged(auth, user => {
+      if (user && user.isAnonymous){
+        // Una sesión anónima (de reservar.html en el mismo navegador) NO tiene
+        // el claim de maestra: las reglas rechazarían leer 'barberos' y la
+        // agenda quedaría colgada en "Cargando barberos…". La cerramos y
+        // pedimos el login maestro de nuevo, en vez de fallar en silencio.
+        signOut(auth).catch(()=>{});
+        return;
+      }
       if (user){
         document.getElementById("loginOverlay").style.display = "none";
         user.getIdToken(true).then(() => resolverAuthListo()).catch(() => resolverAuthListo());
