@@ -199,6 +199,32 @@ textarea.tbo-campo{ min-height:80px; padding: var(--tbo-e2) var(--tbo-e3); line-
     body{ min-height:100vh; position:relative; overflow-x:hidden; }
     .app{ max-width:480px; margin:0 auto; padding-bottom:3rem; position:relative; z-index:1; }
 
+    /* ===== "mármol" — el blanco real del local, mismos tonos que usa
+       agenda.html en su tema claro. Se usa aquí como superficie de las
+       tarjetas para que el negocio se vea tan blanco/ámbar como es. ===== */
+    :root{
+      --tbo-marmol-sup:         #FFFFFF;
+      --tbo-marmol-sup-2:       #FAFAFB;
+      --tbo-marmol-borde:       #E2E5EA;
+      --tbo-marmol-borde-firme: #C7CCD4;
+      --tbo-marmol-texto:       #16181C;
+      --tbo-marmol-texto-2:     #6B717B;
+      --tbo-marmol-texto-3:     #9AA0AA;
+      --tbo-marmol-tenue:       #FBF4E9;   /* mármol bajo la luz ámbar del plafón */
+      --tbo-marmol-sombra:      0 20px 44px -14px rgba(0,0,0,.55), 0 5px 14px rgba(0,0,0,.3);
+      --tbo-marmol-sombra-amb:  0 16px 36px -12px rgba(224,161,74,.4), 0 4px 10px rgba(0,0,0,.3);
+    }
+
+    /* difuminados ambientales: luz ámbar del plafón + un respiro de mármol,
+       fijos sobre el negro para dar atmósfera sin robarle protagonismo al negro. */
+    body::before, body::after{ content:''; position:fixed; z-index:0; pointer-events:none; border-radius:50%; filter:blur(70px); }
+    body::before{ top:-140px; left:50%; width:420px; height:300px; transform:translateX(-50%);
+      background:radial-gradient(circle, rgba(224,161,74,.28), transparent 70%);
+      animation: difuminadoDeriva 14s ease-in-out infinite alternate; }
+    body::after{ bottom:-160px; right:-80px; width:320px; height:320px;
+      background:radial-gradient(circle, rgba(245,245,243,.05), transparent 70%); }
+    @keyframes difuminadoDeriva{ from{ opacity:.85; transform:translateX(-50%) translateY(0); } to{ opacity:1; transform:translateX(-46%) translateY(10px); } }
+
     @keyframes fadeUp{ from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);} }
     @keyframes popIn{ from{opacity:0; transform:scale(.94);} to{opacity:1; transform:scale(1);} }
     @keyframes shimmer{ 0%{background-position:-300px 0;} 100%{background-position:300px 0;} }
@@ -207,10 +233,14 @@ textarea.tbo-campo{ min-height:80px; padding: var(--tbo-e2) var(--tbo-e3); line-
     .reservar-header{
       text-align:center; padding: var(--tbo-e6) var(--tbo-e4) var(--tbo-e4);
       border-bottom:1px solid var(--tbo-borde); box-shadow: var(--tbo-cove);
-      animation: tboAparece .5s ease both;
+      animation: tboAparece .5s ease both; position:relative; overflow:hidden;
     }
-    .reservar-header .tbo-marca{ justify-content:center; }
+    .reservar-header .tbo-marca{ justify-content:center; position:relative; z-index:1; }
     .reservar-header .tbo-marca__sub{ margin-top:2px; }
+    /* el nombre de la barbería debe pesar en pantalla — más grande que el
+       resto de las apariciones del componente en el sistema */
+    .reservar-header .tbo-marca__nombre{ font-size:clamp(25px, 7.6vw, 34px); }
+    .reservar-header .tbo-marca__nombre .tbo-marca__acento{ color:var(--tbo-ambar); }
 
     /* ===== STEPS ===== */
     .steps{ display:flex; justify-content:center; gap:0; padding:1.1rem 1rem 0; animation: tboAparece .5s .06s ease both; }
@@ -219,13 +249,13 @@ textarea.tbo-campo{ min-height:80px; padding: var(--tbo-e2) var(--tbo-e3); line-
     .step:last-child::after{ display:none; }
     .step.done::after{ background:var(--tbo-ambar); }
     .step-num{
-      width:25px; height:25px; border-radius:50%; background:var(--tbo-sup); border:1px solid var(--tbo-borde-firme);
-      color:var(--tbo-texto-3); font-size:11px; font-weight:500; font-family:var(--tbo-cuerpo);
+      width:25px; height:25px; border-radius:50%; background:var(--tbo-marmol-sup); border:1px solid var(--tbo-marmol-borde-firme);
+      color:var(--tbo-marmol-texto-2); font-size:11px; font-weight:500; font-family:var(--tbo-cuerpo);
       display:flex; align-items:center; justify-content:center; margin:0 auto 5px; position:relative; z-index:1;
-      transition:all .25s ease;
+      transition:all .25s ease; box-shadow:0 2px 6px rgba(0,0,0,.35);
     }
     .step.active .step-num{ background:var(--tbo-ambar); color:var(--tbo-tinta); border-color:var(--tbo-ambar); box-shadow:0 0 0 3px var(--tbo-ambar-tenue); }
-    .step.done .step-num{ background:transparent; color:var(--tbo-ambar); border-color:var(--tbo-ambar); font-size:0; }
+    .step.done .step-num{ background:var(--tbo-marmol-sup); color:var(--tbo-ambar); border-color:var(--tbo-ambar); font-size:0; }
     .step.done .step-num::after{ content:'✓'; font-size:11px; }
     .step-label{ font-family:var(--tbo-display); font-weight:400; font-size:9.5px; color:var(--tbo-texto-3); text-transform:uppercase; letter-spacing:.1em; transition:color .25s ease; }
     .step.active .step-label{ color:var(--tbo-texto); }
@@ -244,46 +274,46 @@ textarea.tbo-campo{ min-height:80px; padding: var(--tbo-e2) var(--tbo-e3); line-
     /* ===== SERVICIOS ===== */
     .servicios-grid{ display:grid; grid-template-columns:1fr 1fr; gap:9px; }
     .srv-card{
-      background:var(--tbo-sup); border:1px solid var(--tbo-borde); border-radius:var(--tbo-r);
-      padding:.85rem .8rem; cursor:pointer; transition:border-color .18s ease, background .18s ease;
-      position:relative; animation:fadeUp .35s ease backwards;
+      background:var(--tbo-marmol-sup); border:1px solid var(--tbo-marmol-borde); border-radius:var(--tbo-r);
+      padding:.85rem .8rem; cursor:pointer; transition:border-color .18s ease, background .18s ease, box-shadow .18s ease, transform .18s ease;
+      position:relative; animation:fadeUp .35s ease backwards; box-shadow:var(--tbo-marmol-sombra);
     }
     .servicios-grid .srv-card:nth-child(1){animation-delay:.02s} .servicios-grid .srv-card:nth-child(2){animation-delay:.06s}
     .servicios-grid .srv-card:nth-child(3){animation-delay:.10s} .servicios-grid .srv-card:nth-child(4){animation-delay:.14s}
     .servicios-grid .srv-card:nth-child(5){animation-delay:.18s} .servicios-grid .srv-card:nth-child(6){animation-delay:.22s}
     .servicios-grid .srv-card:nth-child(7){animation-delay:.26s} .servicios-grid .srv-card:nth-child(8){animation-delay:.30s}
     .servicios-grid .srv-card:nth-child(n+9){animation-delay:.34s}
-    .srv-card:hover{ border-color:var(--tbo-borde-firme); }
+    .srv-card:hover{ border-color:var(--tbo-marmol-borde-firme); transform:translateY(-2px); box-shadow:0 24px 48px -14px rgba(0,0,0,.6), 0 6px 16px rgba(0,0,0,.32); }
     .srv-card:active{ transform:scale(.98); }
-    .srv-card.selected{ border-color:var(--tbo-ambar); background:var(--tbo-ambar-tenue); }
-    .srv-nombre{ font-size:13.5px; font-weight:500; color:var(--tbo-texto); padding-right:16px; }
-    .srv-duracion{ font-family:var(--tbo-cifra); font-size:11px; color:var(--tbo-texto-2); margin-top:4px; }
+    .srv-card.selected{ border-color:var(--tbo-ambar); background:var(--tbo-marmol-tenue); box-shadow:var(--tbo-marmol-sombra-amb); }
+    .srv-nombre{ font-size:13.5px; font-weight:500; color:var(--tbo-marmol-texto); padding-right:16px; }
+    .srv-duracion{ font-family:var(--tbo-cifra); font-size:11px; color:var(--tbo-marmol-texto-2); margin-top:4px; }
     .info-btn{ position:absolute; top:8px; right:8px; background:none; border:none; color:var(--tbo-ambar); font-size:15px; cursor:pointer; padding:2px 4px; line-height:1; transition:transform .15s ease; }
-    .info-btn:hover{ color:var(--tbo-ambar-claro); transform:scale(1.12); }
-    .srv-desc{ margin-top:8px; font-size:11px; color:var(--tbo-texto-2); line-height:1.55; border-top:1px solid var(--tbo-borde); padding-top:8px; display:none; }
+    .info-btn:hover{ color:#c5883b; transform:scale(1.12); }
+    .srv-desc{ margin-top:8px; font-size:11px; color:var(--tbo-marmol-texto-2); line-height:1.55; border-top:1px solid var(--tbo-marmol-borde); padding-top:8px; display:none; }
     .srv-desc.open{ display:block; animation:fadeUp .2s ease both; }
     .sep-label{ grid-column:1/-1; font-family:var(--tbo-display); font-size:11px; color:var(--tbo-ambar); text-transform:uppercase; letter-spacing:.14em; padding:10px 0 3px; border-top:1px solid var(--tbo-borde); margin-top:5px; font-weight:400; }
     .loading-inline{ grid-column:1/-1; text-align:center; color:var(--tbo-texto-3); font-size:13px; padding:1.5rem 0; }
 
     .skel-grid{ grid-column:1/-1; display:grid; grid-template-columns:1fr 1fr; gap:9px; }
-    .skel-card{ height:64px; border-radius:var(--tbo-r); background:linear-gradient(90deg, var(--tbo-sup) 25%, var(--tbo-sup-2) 37%, var(--tbo-sup) 63%); background-size:400px 100%; animation:shimmer 1.4s ease-in-out infinite; border:1px solid var(--tbo-borde); }
+    .skel-card{ height:64px; border-radius:var(--tbo-r); background:linear-gradient(90deg, var(--tbo-marmol-sup-2) 25%, #FFFFFF 37%, var(--tbo-marmol-sup-2) 63%); background-size:400px 100%; animation:shimmer 1.4s ease-in-out infinite; border:1px solid var(--tbo-marmol-borde); box-shadow:var(--tbo-marmol-sombra); }
 
     /* ===== FECHAS ===== */
     .fechas-row{ display:flex; gap:8px; overflow-x:auto; padding-bottom:6px; scrollbar-width:none; }
     .fechas-row::-webkit-scrollbar{ display:none; }
     .fecha-card{
-      flex-shrink:0; background:var(--tbo-sup); border:1px solid var(--tbo-borde); border-radius:var(--tbo-r);
-      padding:.65rem .8rem; cursor:pointer; text-align:center; min-width:58px;
-      transition:border-color .18s ease, background .18s ease; animation:fadeUp .3s ease backwards;
+      flex-shrink:0; background:var(--tbo-marmol-sup); border:1px solid var(--tbo-marmol-borde); border-radius:var(--tbo-r);
+      padding:.65rem .8rem; cursor:pointer; text-align:center; min-width:58px; box-shadow:var(--tbo-marmol-sombra);
+      transition:border-color .18s ease, background .18s ease, transform .18s ease, box-shadow .18s ease; animation:fadeUp .3s ease backwards;
       animation-delay:calc(var(--i,0) * 22ms);
     }
-    .fecha-card:hover{ border-color:var(--tbo-borde-firme); }
+    .fecha-card:hover{ border-color:var(--tbo-marmol-borde-firme); transform:translateY(-2px); }
     .fecha-card:active{ transform:scale(.96); }
-    .fecha-card.selected{ border-color:var(--tbo-ambar); background:var(--tbo-ambar-tenue); }
-    .fecha-dia-num{ font-family:var(--tbo-cifra); font-size:18px; font-weight:500; color:var(--tbo-texto); }
+    .fecha-card.selected{ border-color:var(--tbo-ambar); background:var(--tbo-marmol-tenue); box-shadow:var(--tbo-marmol-sombra-amb); }
+    .fecha-dia-num{ font-family:var(--tbo-cifra); font-size:18px; font-weight:500; color:var(--tbo-marmol-texto); }
     .fecha-card.selected .fecha-dia-num{ color:var(--tbo-ambar); }
-    .fecha-dia-nom{ font-size:10px; color:var(--tbo-texto-2); text-transform:uppercase; letter-spacing:.04em; }
-    .fecha-mes{ font-size:10px; color:var(--tbo-texto-3); margin-top:2px; }
+    .fecha-dia-nom{ font-size:10px; color:var(--tbo-marmol-texto-2); text-transform:uppercase; letter-spacing:.04em; }
+    .fecha-mes{ font-size:10px; color:var(--tbo-marmol-texto-3); margin-top:2px; }
 
     /* ===== BARBERO ===== */
     .barbero-toggle{ font-size:13px; color:var(--tbo-texto-2); margin-bottom:1rem; cursor:pointer; }
@@ -296,34 +326,37 @@ textarea.tbo-campo{ min-height:80px; padding: var(--tbo-e2) var(--tbo-e3); line-
     /* ===== HORARIOS ===== */
     .horarios-grid{ display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; }
     .hora-card{
-      background:var(--tbo-sup); border:1px solid var(--tbo-borde); border-radius:var(--tbo-r-sm);
-      padding:.62rem; text-align:center; cursor:pointer; font-family:var(--tbo-cifra); font-size:13px; color:var(--tbo-texto); font-weight:500;
-      transition:border-color .16s ease, background .16s ease; animation:fadeUp .28s ease backwards;
+      background:var(--tbo-marmol-sup); border:1px solid var(--tbo-marmol-borde); border-radius:var(--tbo-r-sm);
+      padding:.62rem; text-align:center; cursor:pointer; font-family:var(--tbo-cifra); font-size:13px; color:var(--tbo-marmol-texto); font-weight:500;
+      transition:border-color .16s ease, background .16s ease, transform .16s ease; animation:fadeUp .28s ease backwards; box-shadow:var(--tbo-marmol-sombra);
     }
     .horarios-grid .hora-card:nth-child(1){animation-delay:.01s} .horarios-grid .hora-card:nth-child(2){animation-delay:.03s} .horarios-grid .hora-card:nth-child(3){animation-delay:.05s}
     .horarios-grid .hora-card:nth-child(4){animation-delay:.07s} .horarios-grid .hora-card:nth-child(5){animation-delay:.09s} .horarios-grid .hora-card:nth-child(6){animation-delay:.11s}
     .horarios-grid .hora-card:nth-child(7){animation-delay:.13s} .horarios-grid .hora-card:nth-child(8){animation-delay:.15s} .horarios-grid .hora-card:nth-child(9){animation-delay:.17s}
     .horarios-grid .hora-card:nth-child(n+10){animation-delay:.19s}
-    .hora-card:hover{ border-color:var(--tbo-borde-firme); }
+    .hora-card:hover{ border-color:var(--tbo-marmol-borde-firme); transform:translateY(-1px); }
     .hora-card:active{ transform:scale(.95); }
-    .hora-card.selected{ border-color:var(--tbo-ambar); background:var(--tbo-ambar); color:var(--tbo-tinta); font-weight:600; }
+    .hora-card.selected{ border-color:var(--tbo-ambar); background:var(--tbo-ambar); color:var(--tbo-tinta); font-weight:600; box-shadow:var(--tbo-marmol-sombra-amb); }
     .no-disponible{ text-align:center; padding:2.2rem 1rem; color:var(--tbo-texto-3); font-size:13.5px; line-height:1.6; animation:fadeUp .3s ease both; }
 
     /* ===== DATOS ===== */
     .fg{ margin-bottom:14px; animation:fadeUp .3s ease both; }
+    .fg .tbo-campo{ background:var(--tbo-marmol-sup); color:var(--tbo-marmol-texto); border-color:var(--tbo-marmol-borde-firme); box-shadow:var(--tbo-marmol-sombra); }
+    .fg .tbo-campo::placeholder{ color:var(--tbo-marmol-texto-3); }
 
     /* ===== RESUMEN ===== */
-    .resumen-card{ animation:fadeUp .35s ease both; margin-bottom:1.1rem; }
-    .res-row{ display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid var(--tbo-borde); font-size:13px; gap:12px; }
+    .resumen-card{ animation:fadeUp .35s ease both; margin-bottom:1.1rem; background:var(--tbo-marmol-sup); border-color:var(--tbo-marmol-borde); box-shadow:var(--tbo-marmol-sombra); }
+    .res-row{ display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid var(--tbo-marmol-borde); font-size:13px; gap:12px; }
     .res-row:last-child{ border-bottom:none; }
-    .res-lbl{ color:var(--tbo-texto-2); }
-    .res-val{ color:var(--tbo-texto); font-weight:500; text-align:right; }
+    .res-lbl{ color:var(--tbo-marmol-texto-2); }
+    .res-val{ color:var(--tbo-marmol-texto); font-weight:500; text-align:right; }
     .res-val.cifra{ font-family:var(--tbo-cifra); }
 
     /* ===== BOTONES DE FLUJO ===== */
     .btn-primary{ width:100%; margin-top:1rem; font-size:15px; }
     .btn-primary:disabled{ opacity:.35; }
-    .btn-secondary{ width:100%; margin-top:9px; }
+    .btn-secondary{ width:100%; margin-top:9px; border-color:rgba(245,245,243,.22); color:var(--tbo-texto); }
+    .btn-secondary:hover{ border-color:rgba(245,245,243,.42); background:rgba(245,245,243,.06); }
 
     /* ===== CONFIRMACION ===== */
     .confirmacion{ display:none; flex-direction:column; align-items:center; text-align:center; padding:3.2rem 1.6rem 2rem; position:relative; z-index:1; }
@@ -337,7 +370,10 @@ textarea.tbo-campo{ min-height:80px; padding: var(--tbo-e2) var(--tbo-e3); line-
     @keyframes drawCheck{ to{ stroke-dashoffset:0; } }
     .conf-titulo{ font-family:var(--tbo-display); font-size:22px; font-weight:400; margin-bottom:.5rem; color:var(--tbo-texto); animation:fadeUp .4s .5s ease both; }
     .conf-sub{ font-size:14px; color:var(--tbo-texto-2); line-height:1.6; margin-bottom:1.8rem; animation:fadeUp .4s .58s ease both; }
-    .conf-card{ width:100%; margin-bottom:1.6rem; text-align:left; animation:fadeUp .4s .66s ease both; }
+    .conf-card{ width:100%; margin-bottom:1.6rem; text-align:left; animation:fadeUp .4s .66s ease both; background:var(--tbo-marmol-sup); border-color:var(--tbo-marmol-borde); box-shadow:var(--tbo-marmol-sombra); }
+    .conf-card .res-row{ border-bottom-color:var(--tbo-marmol-borde); }
+    .conf-card .res-lbl{ color:var(--tbo-marmol-texto-2); }
+    .conf-card .res-val{ color:var(--tbo-marmol-texto); }
 
     .confetti-layer{ position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:0; }
     .confetti-piece{ position:absolute; top:-10px; width:6px; height:10px; opacity:.85; border-radius:1px; animation:confettiFall linear forwards; }
@@ -380,7 +416,7 @@ textarea.tbo-campo{ min-height:80px; padding: var(--tbo-e2) var(--tbo-e3); line-
   <div class="reservar-header">
     <div class="tbo-marca tbo-marca--sobre-oscuro">
       <div class="tbo-marca__ancla">
-        <div class="tbo-marca__nombre">The Barber One</div>
+        <div class="tbo-marca__nombre">The Barber <span class="tbo-marca__acento">One</span></div>
         <div class="tbo-marca__raya"></div>
       </div>
       <div class="tbo-marca__sub">Agenda tu cita</div>
