@@ -389,6 +389,13 @@ textarea.tbo-campo{ min-height:80px; padding: var(--tbo-e2) var(--tbo-e3); line-
     .cita-nombre { font-size:12px; font-weight:700; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .cita-servicio { font-size:10.5px; color:var(--text-muted); text-transform:uppercase; letter-spacing:.2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .cita-tag { position:absolute; top:4px; right:5px; font-size:10px; }
+    /* Hora en que se capturó/reservó la cita — color ámbar de marca para que
+       resalte sobre el rango del servicio y el nombre. */
+    .cita-capturada {
+      display:inline-flex; align-items:center; gap:3px; margin-top:2px;
+      font-family: var(--tbo-cifra, monospace); font-size:9.5px; font-weight:600;
+      color: var(--tbo-ambar, #b8791f); letter-spacing:.2px;
+    }
 
     /* bloque gris "no disponible" (override no-trabaja / domingo) */
     .no-disp {
@@ -454,8 +461,9 @@ textarea.tbo-campo{ min-height:80px; padding: var(--tbo-e2) var(--tbo-e3); line-
     .avisos-vacio { text-align:center; color:var(--text-faint); font-size:13px; padding:30px 12px; }
     .aviso-sep { font-size:11px; font-weight:700; color:var(--text-faint); text-transform:uppercase; letter-spacing:.4px; margin:10px 4px 6px; }
     .ticket { background:var(--surface-2); border:1px solid var(--border); border-radius:10px; padding:10px 12px; margin-bottom:8px; }
-    .ticket.futuro { border-color:#f5c78a; background:#fff8ee; }
+    .ticket.futuro { border-color:var(--tbo-ambar,#E0A14A); border-left:4px solid var(--tbo-ambar,#E0A14A); background:#fff6e9; }
     .ticket-etq { font-size:10.5px; font-weight:700; color:var(--text-muted); margin-bottom:3px; }
+    .ticket.futuro .ticket-etq { color:#b8791f; }
     .ticket-nombre { font-size:13px; font-weight:700; }
     .ticket-sub { font-size:11.5px; color:var(--text-muted); margin:2px 0 8px; }
     .ticket-btn { width:100%; padding:7px; border:0; border-radius:8px; background:var(--accent); color:#fff; font-size:12px; font-weight:600; cursor:pointer; }
@@ -788,6 +796,16 @@ textarea.tbo-campo{ min-height:80px; padding: var(--tbo-e2) var(--tbo-e3); line-
   function slotToMin(s){ const [h,m]=s.split(':').map(Number); return h*60+m; }
   function slot12hr(s){ const [h,m]=s.split(':').map(Number); const ap=h>=12?'PM':'AM'; const h12=h%12||12; return `${h12}:${String(m).padStart(2,'0')} ${ap}`; }
   function min12hr(m){ return slot12hr(minToSlot(m)); }
+  // Hora en que se capturó/reservó la cita, desde el ts guardado (ms).
+  // Sirve igual para citas web y de recepción (ambas guardan ts).
+  function horaCaptura(ts){
+    if (!ts) return '';
+    const d = new Date(ts);
+    if (isNaN(d)) return '';
+    let h = d.getHours(); const m = d.getMinutes();
+    const ap = h>=12?'PM':'AM'; h = h%12||12;
+    return `${h}:${String(m).padStart(2,'0')} ${ap}`;
+  }
   function getDateKey(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
   function iniciales(n){ return (n||'').trim().slice(0,2).toUpperCase(); }
   function colorBarbero(nombre){ let h=0; for (let i=0;i<(nombre||'').length;i++) h=(h*31+nombre.charCodeAt(i))>>>0; return PALETA[h % PALETA.length]; }
@@ -804,6 +822,9 @@ textarea.tbo-campo{ min-height:80px; padding: var(--tbo-e2) var(--tbo-e3); line-
   // Avisos web (independiente de la fecha navegada)
   let avisosWeb = [];
   let idsAvisosVistos = null;
+  // Reservas web que el recepcionista ya marcó como "Entendido" en esta
+  // sesión — para no re-mostrarlas ni re-sonarlas mientras la agenda vive.
+  let avisosAtendidos = new Set();
   let unsubAvisos = null;
 
   function beep(){
@@ -874,21 +895,28 @@ textarea.tbo-campo{ min-height:80px; padding: var(--tbo-e2) var(--tbo-e3); line-
   }
 
   // ---- Avisos web: citas de hoy en adelante con origen 'reserva-web' ----
+  // El panel lista TODAS las reservas web futuras que aún no marcas como
+  // atendidas (persisten aunque cierres/reabras la agenda — así sirven de
+  // control real). El beep suena solo para las que llegan EN VIVO.
   function escucharAvisosWeb(){
     if (unsubAvisos) unsubAvisos();
     const hoyKey = getDateKey(new Date());
     unsubAvisos = onSnapshotSeguro(query(collection(db,'citas'), where('fecha','>=',hoyKey)), snap => {
       const web = snap.docs.map(d => ({ id:d.id, ...d.data() })).filter(c => c.origen === 'reserva-web');
+      const primeraCarga = (idsAvisosVistos === null);
+      web.forEach(c => {
+        const yaEsta = avisosWeb.some(a => a.id === c.id);
+        const atendido = avisosAtendidos.has(c.id);
+        if (!yaEsta && !atendido){
+          avisosWeb.unshift({ id:c.id, nombre:c.nombre, barbero:c.barbero, slot:c.slot, servicio:c.servicio, fecha:c.fecha, ts:c.ts||Date.now() });
+          if (!primeraCarga) beep(); // solo suena para las que llegan en vivo
+        }
+      });
+      // limpia de la lista lo que ya no exista (cita borrada)
       const ids = new Set(web.map(c => c.id));
-      if (idsAvisosVistos !== null){
-        web.forEach(c => {
-          if (!idsAvisosVistos.has(c.id) && !avisosWeb.some(a => a.id===c.id)){
-            avisosWeb.unshift({ id:c.id, nombre:c.nombre, barbero:c.barbero, slot:c.slot, servicio:c.servicio, fecha:c.fecha, ts:c.ts||Date.now() });
-            beep(); renderAvisos();
-          }
-        });
-      }
+      avisosWeb = avisosWeb.filter(a => ids.has(a.id));
       idsAvisosVistos = ids;
+      renderAvisos();
     });
     if ('Notification' in window && Notification.permission === 'default') Notification.requestPermission();
   }
@@ -928,7 +956,7 @@ textarea.tbo-campo{ min-height:80px; padding: var(--tbo-e2) var(--tbo-e3); line-
     });
     cont.innerHTML = html;
   }
-  window.atenderAviso = function(id){ avisosWeb = avisosWeb.filter(a => a.id !== id); renderAvisos(); };
+  window.atenderAviso = function(id){ avisosAtendidos.add(id); avisosWeb = avisosWeb.filter(a => a.id !== id); renderAvisos(); };
   window.abrirAvisos = function(){ document.getElementById('avisos-panel').classList.add('open'); document.getElementById('panel-backdrop').classList.add('open'); };
   window.cerrarAvisos = function(){ document.getElementById('avisos-panel').classList.remove('open'); document.getElementById('panel-backdrop').classList.remove('open'); };
 
@@ -1015,11 +1043,14 @@ textarea.tbo-campo{ min-height:80px; padding: var(--tbo-e2) var(--tbo-e3); line-
           const esWeb = cita.origen === 'reserva-web';
           const cls = esWeb ? 'web' : 'normal';
           const tag = esWeb ? '🌐' : '🏠';
+          const cap = horaCaptura(cita.ts);
+          const capHtml = cap ? `<div class="cita-capturada">🕒 ${esWeb?'Reservó':'Capturó'} ${cap}</div>` : '';
           c += `<div class="cita ${cls}" style="top:${top}px;height:${alto}px" onclick="event.stopPropagation();abrirEditarCita('${cita.id}')">
             <span class="cita-tag">${tag}</span>
             <div class="cita-rango">${min12hr(ini)} – ${min12hr(ini+dur)}</div>
             <div class="cita-nombre">${cita.nombre||''}</div>
             <div class="cita-servicio">${cita.servicio||''}</div>
+            ${capHtml}
           </div>`;
         });
       }
