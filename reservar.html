@@ -540,11 +540,25 @@ window.enviarSolicitud = async function(){
       new Promise((_, rej) => setTimeout(() => rej({code:'auth-timeout', message:'La identidad anónima nunca respondió'}), 6000))
     ]);
     // Agenda DIRECTO como cita confirmada (sin aprobación manual)
+    // Normalizamos al shape EXACTO que exige la regla citaValida():
+    //  - barbero SIEMPRE string (la Cloud Function puede devolver el num como número)
+    //  - slot con dos dígitos en la hora (regex ^\d{2}:\d{2}$: "9:05" -> "09:05")
+    //  - durMin como número
+    const slotNorm = String(selSlot).replace(/^(\d):/, '0$1:');
+    const barberoNorm = String(selBarbero);
+    const durNorm = Number(selServicio.durMin);
+    // Diagnóstico temporal: si la regla vuelve a rechazar, esto dice qué campo
+    console.log('Cita a enviar →', {
+      nombre:[nombre, nombre.length], telefono:[tel, tel.length],
+      comentario:[com, com.length], servicio:[selServicio.nombre],
+      durMin:[durNorm, typeof durNorm], fecha:[getDateKey(d)],
+      slot:[slotNorm], barbero:[barberoNorm, typeof selBarbero]
+    });
     await addDoc(collection(db,'citas'), {
       nombre, telefono: tel, comentario: com,
-      servicio: selServicio.nombre, durMin: selServicio.durMin,
-      fecha: getDateKey(d), slot: selSlot,
-      barbero: selBarbero, tipo: 'normal', confirmado: true,
+      servicio: selServicio.nombre, durMin: durNorm,
+      fecha: getDateKey(d), slot: slotNorm,
+      barbero: barberoNorm, tipo: 'normal', confirmado: true,
       origen: 'reserva-web', ts: Date.now()
     });
 
