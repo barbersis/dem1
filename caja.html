@@ -3,25 +3,39 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Caja — DEMO</title>
+<title>Caja — THE BARBER ONE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --fondo:#121212;
-    --panel:#1c1c1c;
-    --borde:#2c2c2c;
-    --texto:#eaeaea;
-    --texto-suave:#9a9a9a;
-    --ambar:#e8a33d;
-    --verde:#4caf50;
+    --fondo:#0A0A0C;
+    --panel:#131316;
+    --panel-2:#1A1A1F;
+    --borde:#28282E;
+    --borde-firme:#3A3A42;
+    --texto:#F5F5F3;
+    --texto-suave:#9CA0A8;
+    --texto-3:#5E6169;
+    --ambar:#FFD60A;
+    --ambar-claro:#FFE657;
+    --ambar-tenue:rgba(255,214,10,.15);
+    --verde:#22c55e;
     --rojo:#e05c5c;
     --azul:#8ab8e8;
+    --display:'Jost',sans-serif;
+    --cuerpo:'IBM Plex Sans',sans-serif;
+    --cifra:'IBM Plex Mono',monospace;
+    --resorte:cubic-bezier(.34,1.32,.44,1);
   }
   *{ box-sizing:border-box; margin:0; padding:0; }
   body{
     background:var(--fondo);
     color:var(--texto);
-    font-family:-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    font-family:var(--cuerpo);
     min-height:100vh;
+    position:relative;
+    overflow-x:hidden;
   }
   button{ font-family:inherit; }
 
@@ -1040,7 +1054,7 @@
   .filaMetodo.tres{ grid-template-columns:1fr 1fr 1fr; }
   .btnMetodo.chico{ padding:13px 0; font-size:14px; }
   /* Estado seleccionado del método */
-  .btnMetodo.sel{ outline:3px solid #e8a33d; outline-offset:-1px; }
+  .btnMetodo.sel{ outline:3px solid #FFD60A; outline-offset:-1px; }
   /* Sub-botones Tarjeta 1 / Tarjeta 2, se despliegan al elegir Tarjeta */
   .filaSubTarjeta{
     display:none;
@@ -1059,7 +1073,7 @@
     background:#2b4a6b;
     color:#dbeafd;
   }
-  .btnSubTarjeta.sel{ outline:3px solid #e8a33d; outline-offset:-1px; }
+  .btnSubTarjeta.sel{ outline:3px solid #FFD60A; outline-offset:-1px; }
   .btnSubTarjeta:disabled{ opacity:0.5; cursor:default; }
   /* Botón propina + input, aparecen solo en métodos digitales */
   .bloquePropina{
@@ -1081,7 +1095,7 @@
     cursor:pointer;
     white-space:nowrap;
   }
-  .btnPropina.activo{ background:#e8a33d; color:#1a1a1a; }
+  .btnPropina.activo{ background:#FFD60A; color:#1a1a1a; }
   .inputPropina{
     padding:11px 12px;
     font-size:15px;
@@ -1198,6 +1212,197 @@
     cursor:pointer;
     display:block;
   }
+
+  /* ================================================================ */
+  /*  TEMA VISUAL — armonizado con "Reservar" (The Barber One)        */
+  /*  Solo estética: tipografías, acento ámbar y ambiente.            */
+  /* ================================================================ */
+
+  /* Títulos con la display Jost, igual que en Reservar */
+  .cajaLogin h1,
+  .tituloHeader h2,
+  .modal h3,
+  .formAgregar h4{
+    font-family:var(--display);
+    font-weight:500;
+    letter-spacing:.02em;
+  }
+  /* Cifras grandes con Jost (mismo look que los números de Reservar) */
+  .valorCard,
+  .cardResultado .valorCard,
+  .cardT1 .valorT1{
+    font-family:var(--display);
+    font-weight:500;
+  }
+  /* Etiquetas / kickers y fechas con la mono IBM Plex Mono */
+  .card .tituloCard,
+  .cardResultado .tituloCard,
+  .tituloSeccion,
+  #fechaHeader,
+  .etiquetaSelect,
+  .colCabeza .clientesCol{
+    font-family:var(--cifra);
+  }
+  /* Números alineados en tablas y montos */
+  .valorCard,
+  .monto,
+  .montoItem,
+  .montoTotal,
+  .valorF,
+  .valorT1,
+  table.semanal td,
+  table.semanal th,
+  #rangoSemana,
+  #nomRango,
+  #totalMovimientos{
+    font-variant-numeric:tabular-nums;
+  }
+
+  /* Ambiente: glows ámbar a la deriva, detrás de todo el contenido */
+  body::before,
+  body::after{
+    content:'';
+    position:fixed;
+    width:340px;
+    height:340px;
+    border-radius:50%;
+    background:var(--ambar);
+    filter:blur(90px);
+    opacity:.13;
+    z-index:-1;
+    pointer-events:none;
+    animation:cajaDeriva 16s ease-in-out infinite;
+  }
+  body::before{ top:-150px; left:-110px; }
+  body::after{ bottom:-8%; right:-130px; animation-delay:-8s; animation-duration:19s; }
+  @keyframes cajaDeriva{
+    0%,100%{ transform:translate(0,0) scale(1); }
+    50%{ transform:translate(28px,46px) scale(1.14); }
+  }
+
+  /* Plafón: tira LED viva corriendo por el borde superior */
+  html::before{
+    content:'';
+    position:fixed;
+    top:0; left:0; right:0;
+    height:3px;
+    z-index:60;
+    pointer-events:none;
+    background:linear-gradient(90deg,transparent,#1e6bff 40%,#ffffff 50%,#1e6bff 60%,transparent) -40% 0/42% 100% no-repeat, #000;
+    animation:cajaCorreLuz 3.4s linear infinite;
+  }
+  @keyframes cajaCorreLuz{
+    0%{ background-position:-40% 0, 0 0; }
+    100%{ background-position:140% 0, 0 0; }
+  }
+
+  /* Foco ámbar suave en inputs, como en Reservar */
+  .cajaLogin input:focus,
+  .modal input:focus,
+  .formAgregar input:focus,
+  .selectTabulador:focus,
+  .filaServT input:focus,
+  #notaTexto:focus,
+  #diaNotaTexto:focus,
+  .inputPropina:focus{
+    box-shadow:0 0 0 4px var(--ambar-tenue);
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    body::before, body::after, html::before{ animation:none; }
+  }
+
+  /* ================================================================ */
+  /*  DIRECCIÓN B · CROMO LED — profundidad, brillo blanco y acento    */
+  /*  Solo estética. No cambia estructura ni lógica.                   */
+  /* ================================================================ */
+
+  /* Brillo en el acento ámbar de la marca */
+  .cajaLogin h1 span,
+  .tituloHeader h2 span{ color:var(--ambar); text-shadow:0 0 14px rgba(255,214,10,.5); }
+
+  /* --- LOGIN: panel cromado con poste de barbero --- */
+  .cajaLogin{
+    background:linear-gradient(180deg,#1b1b21,#0f0f13);
+    border:1px solid var(--borde);
+    border-radius:18px;
+    box-shadow:0 30px 70px -24px rgba(0,0,0,.85), inset 0 1px 0 rgba(255,255,255,.09);
+    position:relative; overflow:hidden;
+  }
+  .cajaLogin::after{
+    content:''; position:absolute; inset:0; pointer-events:none; border-radius:inherit;
+    background:linear-gradient(180deg,rgba(255,255,255,.06),transparent 22%);
+  }
+  .cajaLogin h1{ font-size:24px; font-weight:600; letter-spacing:.05em; text-transform:uppercase; position:relative; z-index:1; }
+  .cajaLogin h1::before{
+    content:''; display:inline-block; width:7px; height:19px; vertical-align:-3px; margin-right:10px; border-radius:3px;
+    background:repeating-linear-gradient(-45deg,var(--ambar) 0 5px,#fff 5px 10px);
+    box-shadow:0 0 12px rgba(255,214,10,.5);
+  }
+  .cajaLogin input{
+    background:#0a0a0c; border:1px solid var(--borde-firme);
+    font-family:var(--cifra); letter-spacing:.18em;
+    box-shadow:inset 0 2px 6px rgba(0,0,0,.6);
+    position:relative; z-index:1;
+  }
+  .cajaLogin button{ position:relative; z-index:1; }
+
+  /* --- HEADER: base metálica con línea LED inferior --- */
+  header{
+    background:linear-gradient(180deg,var(--panel-2),#0d0d11);
+    border-bottom:1px solid transparent;
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.06), 0 10px 26px -20px #000;
+  }
+  header::after{
+    content:''; position:absolute; left:0; right:0; bottom:0; height:2px;
+    background:linear-gradient(90deg,transparent,var(--ambar),transparent);
+  }
+  .tituloHeader h2{ font-weight:700; letter-spacing:.04em; text-transform:uppercase; }
+
+  /* --- PESTAÑAS como chips; activa en ámbar --- */
+  .pestanas{ gap:6px; }
+  .pestana{ border-radius:10px 10px 0 0; border-bottom:none; font-family:var(--cifra); letter-spacing:.05em; }
+  .pestana.activa{
+    background:linear-gradient(180deg,var(--ambar-claro),var(--ambar));
+    color:#0a0a0c; font-weight:700; border-bottom:none;
+    box-shadow:0 8px 18px -8px rgba(255,214,10,.45);
+  }
+
+  /* --- TARJETAS: profundidad + barra LED lateral + subrayado --- */
+  .card{
+    background:linear-gradient(180deg,#181820,#101014);
+    border:1px solid var(--borde);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.06), 0 10px 26px -16px rgba(0,0,0,.9);
+    position:relative; overflow:hidden; padding-left:18px;
+  }
+  .card::before{
+    content:''; position:absolute; left:0; top:12px; bottom:12px; width:3px; border-radius:3px;
+    background:linear-gradient(180deg,var(--ambar-claro),var(--ambar));
+    box-shadow:0 0 10px rgba(255,214,10,.5);
+  }
+  .cuadriculaCards .valorCard{ color:#fff; }
+  .cuadriculaCards .valorCard.verde{ color:var(--verde); }
+  .cuadriculaCards .valorCard.azul{ color:var(--azul); }
+  .cuadriculaCards .valorCard.rojo{ color:var(--rojo); }
+  .cuadriculaCards .valorCard::after{
+    content:''; display:block; width:26px; height:2px; margin-top:8px; border-radius:2px;
+    background:var(--ambar); box-shadow:0 0 8px rgba(255,214,10,.55);
+  }
+
+  /* --- BOTONES ÁMBAR: degradado con destello blanco especular --- */
+  #btnEntrar, .cajaLogin button,
+  #btnCobroManual, .btnCobrarPend, #agregarBtn,
+  .btnGuardarModal, #btnCrearBarberos, #btnSembrarTab, .btnGuardarT{
+    background:linear-gradient(180deg,rgba(255,255,255,.28),transparent 42%),linear-gradient(180deg,var(--ambar-claro),var(--ambar));
+    color:#0a0a0c;
+    box-shadow:0 12px 24px -10px rgba(255,214,10,.5), inset 0 1px 0 rgba(255,255,255,.7);
+  }
+
+  /* --- Botones secundarios y píldoras: leve profundidad metálica --- */
+  .btnSecundario, #btnAdmin, #btnAgenda, #btnSalir{
+    background:linear-gradient(180deg,var(--panel-2),#101014);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.05);
+  }
 </style>
 </head>
 <body>
@@ -1205,7 +1410,7 @@
 <!-- PANTALLA DE LOGIN -->
 <div id="pantallaLogin">
   <div class="cajaLogin">
-    <h1>CAJA <span>DEMO</span></h1>
+    <h1>THE BARBER <span>ONE</span></h1>
     <p>Panel de caja</p>
     <input type="password" id="inputPass" placeholder="Contraseña" autocomplete="off">
     <button id="btnEntrar">Entrar</button>
@@ -1219,7 +1424,7 @@
     <div class="headerContenido">
       <div class="filaHeader">
         <div class="tituloHeader">
-          <h2>DEMO <span>CAJA</span></h2>
+          <h2>THE BARBER <span>ONE</span></h2>
           <div id="fechaHeader"></div>
         </div>
         <div class="ladoDerecho">
@@ -1871,7 +2076,7 @@
     <label>Monto ($)</label>
     <div style="display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;">
       <input type="number" id="pendMonto" placeholder="0" inputmode="numeric" min="0" readonly>
-      <button id="pendModificar" style="padding:10px 12px;font-size:13px;font-weight:700;border:none;border-radius:10px;background:#2c2c2c;color:#e8a33d;cursor:pointer;">Modificar 🔒</button>
+      <button id="pendModificar" style="padding:10px 12px;font-size:13px;font-weight:700;border:none;border-radius:10px;background:var(--panel-2);color:var(--ambar);cursor:pointer;">Modificar 🔒</button>
     </div>
 
     <div class="filaMetodo tres">
@@ -3453,7 +3658,7 @@
     pendMonto.value = p.monto;
     pendMonto.readOnly = true;
     pendModificar.textContent = "Modificar 🔒";
-    pendModificar.style.color = "#e8a33d";
+    pendModificar.style.color = "#FFD60A";
     pendMsg.textContent = "";
     pendDescartar.textContent = "Descartar ticket";
     pendEfectivo.disabled = false;
@@ -6090,7 +6295,7 @@
         monto.style.color = "#e05c5c";
         monto.textContent = "− " + formatoDinero(it.monto);
       } else {
-        monto.style.color = "#e8a33d";
+        monto.style.color = "#FFD60A";
         monto.textContent = formatoDinero(it.monto);
       }
 
@@ -6683,7 +6888,7 @@
     grIniciada = true;
     if(window.Chart){
       Chart.defaults.color = "#9a9a9a";
-      Chart.defaults.borderColor = "#2c2c2c";
+      Chart.defaults.borderColor = "#28282E";
     }
     cargarGraficos();
   }
@@ -6841,7 +7046,7 @@
         data: {
           labels: etiquetas,
           datasets: [
-            { label: "Producción (total)", data: serieProd, borderColor: "#e8a33d", backgroundColor: "#e8a33d", tension: 0.3 },
+            { label: "Producción (total)", data: serieProd, borderColor: "#FFD60A", backgroundColor: "#FFD60A", tension: 0.3 },
             { label: "Efectivo", data: serieEfecIng, borderColor: "#4caf50", backgroundColor: "#4caf50", tension: 0.3 },
             { label: "Tarjeta", data: serieTarj, borderColor: "#8ab8e8", backgroundColor: "#8ab8e8", tension: 0.3 }
           ]
@@ -7105,7 +7310,7 @@
 
   function crearFilaHist(it){
     const fila = document.createElement("div");
-    fila.style.cssText = "display:flex;align-items:center;gap:10px;background:#1c1c1c;border-radius:10px;padding:10px 12px;";
+    fila.style.cssText = "display:flex;align-items:center;gap:10px;background:#131316;border-radius:10px;padding:10px 12px;";
 
     const info = document.createElement("div");
     info.style.cssText = "flex:1;min-width:0;";
