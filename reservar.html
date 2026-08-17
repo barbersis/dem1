@@ -170,6 +170,20 @@
   .loading{text-align:center;padding:2rem;color:var(--texto-3);font-size:14px}
   .toast{position:fixed;bottom:88px;left:50%;transform:translateX(-50%);background:linear-gradient(135deg,var(--ambar-claro),var(--ambar));color:var(--tinta);padding:.6rem 1.2rem;border-radius:20px;font-size:13px;z-index:100;display:none;font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,0.5)}
 
+  /* AVISO DE PRIVACIDAD */
+  .aviso-linea{font-size:11.5px;color:var(--texto-3);text-align:center;line-height:1.6;margin-top:16px}
+  .aviso-link{color:var(--ambar);text-decoration:underline;cursor:pointer}
+  .aviso-overlay{position:fixed;inset:0;z-index:200;background:rgba(6,6,8,.82);backdrop-filter:blur(3px);display:none;align-items:center;justify-content:center;padding:20px}
+  .aviso-overlay.show{display:flex;animation:entra .3s var(--resorte) both}
+  .aviso-modal{background:var(--sup);border:1px solid var(--borde);border-radius:18px;max-width:440px;width:100%;max-height:82vh;overflow-y:auto;position:relative}
+  .aviso-modal::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--ambar),transparent)}
+  .aviso-head{display:flex;align-items:center;justify-content:space-between;padding:18px 20px 12px;position:sticky;top:0;background:var(--sup);z-index:1}
+  .aviso-head b{font-family:var(--display);font-weight:500;font-size:16px;letter-spacing:.04em;text-transform:uppercase}
+  .aviso-x{width:32px;height:32px;border-radius:9px;border:1px solid var(--borde-firme);background:var(--sup-2);color:var(--texto);font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .aviso-body{padding:4px 20px 22px;font-size:12.5px;color:var(--texto-2);line-height:1.65}
+  .aviso-body p{margin-bottom:11px}
+  .aviso-body b{color:var(--texto)}
+
   @media (prefers-reduced-motion: reduce){
     *{animation-duration:.001s !important;animation-iteration-count:1 !important;transition-duration:.001s !important}
   }
@@ -259,6 +273,7 @@
     <div class="section-title">Confirma tu cita</div>
     <div class="section-sub">Revisa los detalles antes de reservar</div>
     <div class="resumen-card" id="resumen-card"></div>
+    <div class="aviso-linea">Al reservar tu cita aceptas nuestro <span class="aviso-link" onclick="document.getElementById('aviso-overlay').classList.add('show')">Aviso de Privacidad</span>.</div>
     <div class="actions">
       <div class="row-btns">
         <button class="btn-secondary" onclick="irPaso(4)">←</button>
@@ -282,7 +297,26 @@
 
 <div class="toast" id="toast"></div>
 
-<a href="https://wa.me/522223424630" target="_blank" style="position:fixed;bottom:96px;right:1rem;background:#25d366;border-radius:30px;display:flex;align-items:center;gap:8px;padding:12px 18px;text-decoration:none;box-shadow:0 4px 12px rgba(37,211,102,.4);z-index:25;font-size:14px;font-weight:600;color:#fff;transition:transform .15s ease;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">💬 WhatsApp</a>
+<!-- AVISO DE PRIVACIDAD (modal) -->
+<div class="aviso-overlay" id="aviso-overlay" onclick="if(event.target===this)this.classList.remove('show')">
+  <div class="aviso-modal">
+    <div class="aviso-head">
+      <b>Aviso de Privacidad</b>
+      <button class="aviso-x" aria-label="Cerrar" onclick="document.getElementById('aviso-overlay').classList.remove('show')">✕</button>
+    </div>
+    <div class="aviso-body">
+      <p><b>The Barber One</b> es responsable del tratamiento y protección de tus datos personales conforme a la Ley Federal de Protección de Datos Personales en Posesión de los Particulares.</p>
+      <p><b>Datos que recabamos.</b> Únicamente tu nombre y tu número de teléfono/WhatsApp, que proporcionas al agendar tu cita.</p>
+      <p><b>Finalidad.</b> Usamos tus datos para agendar, confirmar y dar seguimiento a tu cita, y para contactarte en caso de cambios o de que tu cita no pueda ser aceptada. No los usamos para ningún otro fin.</p>
+      <p><b>No los compartimos.</b> Tus datos no se venden ni se transfieren a terceros ajenos al servicio, salvo requerimiento de una autoridad competente.</p>
+      <p><b>Conservación.</b> Conservamos tus datos solo el tiempo necesario para prestarte el servicio y cumplir obligaciones aplicables.</p>
+      <p><b>Tus derechos (ARCO).</b> Puedes solicitar el acceso, rectificación, cancelación u oposición al tratamiento de tus datos, así como revocar tu consentimiento, escribiéndonos por WhatsApp.</p>
+      <p>Al reservar tu cita, manifiestas que has leído y aceptas el presente Aviso de Privacidad.</p>
+    </div>
+  </div>
+</div>
+
+<a href="https://wa.me/522223424630" target="_blank" aria-label="Escríbenos por WhatsApp" style="position:fixed;bottom:90px;right:16px;width:52px;height:52px;border-radius:50%;background:#25d366;display:flex;align-items:center;justify-content:center;text-decoration:none;box-shadow:0 4px 14px rgba(37,211,102,.45);z-index:25;transition:transform .15s ease;" onmouseover="this.style.transform='scale(1.08)'" onmouseout="this.style.transform='scale(1)'"><svg viewBox="0 0 32 32" width="26" height="26" fill="#fff" aria-hidden="true"><path d="M16.001 3.2c-7.06 0-12.8 5.74-12.8 12.8 0 2.26.6 4.46 1.73 6.4L3.2 28.8l6.57-1.72a12.74 12.74 0 0 0 6.23 1.62h.01c7.06 0 12.8-5.74 12.8-12.8 0-3.42-1.33-6.63-3.75-9.05A12.7 12.7 0 0 0 16 3.2zm0 23.3h-.01a10.6 10.6 0 0 1-5.4-1.48l-.39-.23-4.03 1.06 1.08-3.93-.25-.4a10.55 10.55 0 0 1-1.62-5.63c0-5.86 4.77-10.63 10.64-10.63 2.84 0 5.5 1.11 7.51 3.12a10.55 10.55 0 0 1 3.11 7.52c0 5.86-4.77 10.63-10.64 10.63zm5.83-7.96c-.32-.16-1.89-.93-2.18-1.04-.29-.11-.5-.16-.71.16-.21.32-.82 1.04-1 1.25-.18.21-.37.24-.69.08-.32-.16-1.35-.5-2.57-1.58-.95-.85-1.59-1.9-1.78-2.22-.18-.32-.02-.49.14-.65.14-.14.32-.37.48-.56.16-.19.21-.32.32-.53.11-.21.05-.4-.03-.56-.08-.16-.71-1.71-.97-2.34-.26-.62-.52-.54-.71-.55l-.6-.01c-.21 0-.56.08-.85.4-.29.32-1.11 1.09-1.11 2.64 0 1.55 1.14 3.06 1.3 3.27.16.21 2.24 3.42 5.43 4.8.76.33 1.35.52 1.81.67.76.24 1.45.21 2 .13.61-.09 1.89-.77 2.16-1.52.27-.75.27-1.39.19-1.52-.08-.13-.29-.21-.61-.37z"/></svg></a>
 
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
