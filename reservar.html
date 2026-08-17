@@ -1,997 +1,298 @@
 <!DOCTYPE html>
-<html lang="es" data-tema="oscuro">
+<html lang="es">
 <head>
-  <meta charset="UTF-8" />
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"/>
-  <meta http-equiv="Pragma" content="no-cache"/>
-  <meta http-equiv="Expires" content="0"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#0E0E10" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <title>The Barber One — Reservar cita</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <style>
-/* ============================================================
-   THE BARBER ONE — TEMA VISUAL ÚNICO  (Capa 0)
-   Pegado tal cual desde agenda.html para que reservar.html use
-   EXACTAMENTE la misma marca: mismos tokens, mismo componente de
-   marca (nombre + raya + submarca), mismos botones/campos/chips.
-   reservar.html corre con <html data-tema="oscuro"> (cara al cliente).
-   ============================================================ */
-
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Propuesta C · Bajo el Plafón</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Jost:wght@300;400;500;600&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
 :root{
-  /* --- Marca (igual en claro y oscuro) --- */
-  --tbo-tinta:        #0E0E10;   /* el negro del local */
-  --tbo-ambar:        #E0A14A;   /* la cinta LED del plafón */
-  --tbo-ambar-claro:  #F0C078;
-  --tbo-ambar-tenue:  rgba(224,161,74,.12);
-
-  /* --- Semánticos (apagados a propósito, nada de neón) --- */
-  --tbo-ok:      #2E7D5B;
-  --tbo-alerta:  #B4552B;
-  --tbo-error:   #A32B2B;
-  --tbo-web:     #3C6E9C;
-  --tbo-local:   #6B5B8A;
-
-  /* --- Superficies: TEMA CLARO (se sobreescriben abajo en oscuro) --- */
-  --tbo-fondo:        #F4F5F7;
-  --tbo-sup:          #FFFFFF;
-  --tbo-sup-2:        #FAFAFB;
-  --tbo-borde:        #E2E5EA;
-  --tbo-borde-firme:  #C7CCD4;
-  --tbo-texto:        #16181C;
-  --tbo-texto-2:      #6B717B;
-  --tbo-texto-3:      #9AA0AA;
-  --tbo-sombra:       0 1px 2px rgba(14,14,16,.05), 0 6px 18px rgba(14,14,16,.05);
-
-  /* --- Ritmo --- */
-  --tbo-r:      10px;
-  --tbo-r-sm:   6px;
-  --tbo-e1: 4px;  --tbo-e2: 8px;  --tbo-e3: 12px;
-  --tbo-e4: 16px; --tbo-e5: 24px; --tbo-e6: 32px;
-
-  /* --- Tipografía --- */
-  --tbo-display: 'Jost', system-ui, sans-serif;
-  --tbo-cuerpo:  'IBM Plex Sans', system-ui, sans-serif;
-  --tbo-cifra:   'IBM Plex Mono', ui-monospace, monospace;
-
-  /* --- FIRMA DE LA MARCA: el "cove", el brillo ámbar del plafón --- */
-  --tbo-cove: 0 1px 0 var(--tbo-ambar), 0 6px 20px -6px rgba(224,161,74,.45);
+  --tinta:#0A0A0C; --sup:#131316; --sup-2:#1A1A1F; --borde:#28282E; --borde-firme:#3A3A42;
+  --ambar:#E0A14A; --ambar-claro:#F4C689; --ambar-tenue:rgba(224,161,74,.14);
+  --cromo-1:#E9EBEF; --cromo-2:#8B909B; --cromo-3:#4A4E58;
+  --texto:#F5F5F3; --texto-2:#9CA0A8; --texto-3:#5E6169;
+  --display:'Jost',sans-serif; --cuerpo:'IBM Plex Sans',sans-serif; --cifra:'IBM Plex Mono',monospace;
+  --resorte:cubic-bezier(.34,1.32,.44,1);
 }
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--cuerpo);background:var(--tinta);color:var(--texto);min-height:100vh;position:relative;overflow-x:hidden}
+.app{max-width:480px;margin:0 auto;padding:0 0 30px;position:relative}
 
-html[data-tema="oscuro"]{
-  --tbo-fondo:        #0E0E10;
-  --tbo-sup:          #17181B;
-  --tbo-sup-2:        #1F2125;
-  --tbo-borde:        #2A2D33;
-  --tbo-borde-firme:  #3A3E46;
-  --tbo-texto:        #F5F5F3;
-  --tbo-texto-2:      #A0A5AD;
-  --tbo-texto-3:      #71767E;
-  --tbo-sombra:       0 1px 2px rgba(0,0,0,.4), 0 10px 30px rgba(0,0,0,.35);
-}
+/* ambiente — glows a la deriva, como los reflejos de la cinta LED en el mármol */
+.ambiente{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.ambiente::before,.ambiente::after{content:'';position:absolute;width:340px;height:340px;border-radius:50%;
+  filter:blur(80px);opacity:.35;animation:deriva 14s ease-in-out infinite;}
+.ambiente::before{background:var(--ambar);top:-140px;left:-100px}
+.ambiente::after{background:var(--ambar);bottom:-10%;right:-120px;animation-delay:-7s;animation-duration:17s}
+@keyframes deriva{0%,100%{transform:translate(0,0) scale(1)}50%{transform:translate(30px,50px) scale(1.15)}}
 
-.tbo, .tbo body{
-  background: var(--tbo-fondo);
-  color: var(--tbo-texto);
-  font-family: var(--tbo-cuerpo);
-  font-size: 15px;
-  line-height: 1.5;
-  -webkit-font-smoothing: antialiased;
-}
+/* plafón — banda LED corriendo por el borde superior, viva */
+.plafon{position:fixed;top:0;left:0;right:0;height:3px;z-index:30;overflow:hidden;background:#000}
+.plafon::after{content:'';position:absolute;top:0;left:-40%;width:40%;height:100%;
+  background:linear-gradient(90deg,transparent,var(--ambar-claro),var(--ambar),transparent);
+  animation:correLuz 3.6s linear infinite;}
+@keyframes correLuz{0%{left:-40%}100%{left:100%}}
 
-.tbo-titulo{
-  font-family: var(--tbo-display);
-  font-weight: 300;
-  text-transform: uppercase;
-  letter-spacing: .18em;
-  line-height: 1.25;
-  margin: 0;
-}
-.tbo-titulo--xl{ font-size: 26px; }
-.tbo-titulo--l { font-size: 20px; }
-.tbo-titulo--m { font-size: 15px; }
-.tbo-titulo--s { font-size: 12px; letter-spacing: .22em; color: var(--tbo-texto-2); }
+@keyframes entra{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:translateY(0)}}
+@keyframes popIn{from{opacity:0;transform:scale(.9)}to{opacity:1;transform:scale(1)}}
+@keyframes rayaResp{0%,100%{opacity:.7}50%{opacity:1}}
+@keyframes sheen{from{background-position:-140% 0}to{background-position:240% 0}}
 
-.tbo-cifra{
-  font-family: var(--tbo-cifra);
-  font-variant-numeric: tabular-nums;
-  letter-spacing: -.01em;
-}
+.header{padding:34px 20px 0;text-align:center;position:relative;z-index:1;animation:entra .6s var(--resorte) both}
+.h-kicker{font-family:var(--cifra);font-size:9.5px;letter-spacing:.32em;text-transform:uppercase;color:var(--texto-3)}
+.h-nombre{font-family:var(--display);font-weight:400;font-size:clamp(28px,8.4vw,36px);letter-spacing:.03em;text-transform:uppercase;margin-top:8px}
+.h-nombre .one{color:var(--ambar);position:relative}
+.h-raya{width:0;height:2px;background:linear-gradient(90deg,transparent,var(--ambar),transparent);margin:14px auto 0;
+  animation:rayaExpande .7s .25s var(--resorte) both, rayaResp 2.4s 1s ease-in-out infinite;}
+@keyframes rayaExpande{from{width:0;opacity:0}to{width:120px;opacity:1}}
+.h-tag{font-size:11px;color:var(--texto-2);text-transform:uppercase;letter-spacing:.14em;margin-top:12px}
 
-@keyframes tbo-raya-expande { from { transform: scaleX(0); opacity:.5; } to { transform: scaleX(1); opacity:1; } }
-@keyframes tbo-nombre-entra { from { opacity:0; letter-spacing:.08em; transform: translateY(4px); } to { opacity:1; letter-spacing:.22em; transform: translateY(0); } }
+.steps{display:flex;align-items:center;padding:26px 24px 0;position:relative;z-index:1}
+.trak{flex:1;height:2px;background:var(--borde);position:relative;margin:0 4px;border-radius:2px;overflow:hidden}
+.trak-fill{position:absolute;left:0;top:0;height:100%;width:0;background:linear-gradient(90deg,var(--ambar),var(--ambar-claro));transition:width .5s var(--resorte)}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--borde-firme);flex-shrink:0;transition:all .4s var(--resorte);position:relative}
+.dot.active{background:var(--ambar);box-shadow:0 0 0 5px var(--ambar-tenue),0 0 16px rgba(224,161,74,.6);transform:scale(1.3)}
+.dot.done{background:var(--ambar)}
 
-.tbo-marca{ display:inline-flex; flex-direction:column; align-items:flex-start; gap:6px; }
-.tbo-marca__ancla{ display:inline-block; }
-.tbo-marca__nombre{
-  font-family: var(--tbo-display); font-weight:300; font-size:16px;
-  text-transform: uppercase; letter-spacing:.22em; white-space:nowrap;
-  animation: tbo-nombre-entra .6s ease both;
-}
-.tbo-marca__raya{
-  width:100%; height:1px; background:var(--tbo-ambar); margin-top:6px;
-  transform-origin:center; transform:scaleX(0);
-  animation: tbo-raya-expande .5s cubic-bezier(.16,.84,.44,1) .25s forwards;
-}
-.tbo-marca__sub{
-  font-family: var(--tbo-cuerpo); font-size:10px; text-transform:uppercase; letter-spacing:.18em;
-}
-.tbo-marca--sobre-oscuro .tbo-marca__nombre{ color:#F5F5F3; }
-.tbo-marca--sobre-oscuro .tbo-marca__sub{ color:#A0A5AD; }
-.tbo-marca--sobre-claro .tbo-marca__nombre{ color: var(--tbo-texto); }
-.tbo-marca--sobre-claro .tbo-marca__sub{ color: var(--tbo-texto-2); }
-@media (prefers-reduced-motion: reduce){
-  .tbo-marca__nombre, .tbo-marca__raya{ animation:none !important; transform:none !important; opacity:1 !important; }
-}
+.section{padding:30px 20px 0;display:none;position:relative;z-index:1}
+.section.active{display:block;animation:entra .45s var(--resorte) both}
+.s-title{font-family:var(--display);font-weight:400;font-size:23px;color:var(--texto);margin-bottom:6px}
+.s-sub{font-size:12.5px;color:var(--texto-2);margin-bottom:22px}
 
-.tbo-tarjeta{
-  background: var(--tbo-sup);
-  border: 1px solid var(--tbo-borde);
-  border-radius: var(--tbo-r);
-  box-shadow: var(--tbo-sombra);
-}
-.tbo-tarjeta__cab{ padding: var(--tbo-e3) var(--tbo-e4); border-bottom: 1px solid var(--tbo-borde); }
-.tbo-tarjeta__cuerpo{ padding: var(--tbo-e4); }
+.lista{display:flex;flex-direction:column;gap:10px}
+.card{background:var(--sup);border-radius:14px;padding:16px;cursor:pointer;border:1px solid var(--borde);
+  position:relative;overflow:hidden;transition:transform .35s var(--resorte),border-color .3s ease,background .3s ease;
+  animation:popIn .4s var(--resorte) both}
+.card:nth-child(1){animation-delay:.02s}.card:nth-child(2){animation-delay:.06s}.card:nth-child(3){animation-delay:.1s}
+.card:nth-child(4){animation-delay:.14s}.card:nth-child(5){animation-delay:.18s}.card:nth-child(6){animation-delay:.22s}
+.card:active{transform:scale(.98)}
+.card.sel{border-color:var(--ambar);background:linear-gradient(135deg,rgba(224,161,74,.1),var(--sup) 60%);transform:translateY(-2px)}
+.card.sel::before{content:'';position:absolute;inset:0;
+  background:linear-gradient(100deg,transparent 30%,rgba(224,161,74,.18) 50%,transparent 70%);
+  background-size:200% 100%;animation:sheen 1.1s ease}
+.card-row{display:flex;justify-content:space-between;align-items:center;gap:10px;position:relative;z-index:1}
+.card-nombre{font-size:14.5px;font-weight:500;color:var(--texto)}
+.card-meta{font-family:var(--cifra);font-size:11px;color:var(--texto-2);margin-top:4px}
+.card-dot{width:22px;height:22px;border-radius:50%;border:1px solid var(--borde-firme);flex-shrink:0;position:relative;
+  background:linear-gradient(135deg,var(--cromo-1),var(--cromo-3));opacity:.25;transition:all .3s var(--resorte)}
+.card.sel .card-dot{border-color:var(--ambar);opacity:1;box-shadow:0 0 12px rgba(224,161,74,.5)}
+.card-dot::after{content:'';position:absolute;left:7px;top:3.5px;width:4px;height:9px;border:solid var(--tinta);border-width:0 2px 2px 0;transform:rotate(45deg) scale(0);transition:transform .3s var(--resorte)}
+.card.sel .card-dot::after{transform:rotate(45deg) scale(1)}
 
-.tbo-btn{
-  display:inline-flex; align-items:center; justify-content:center; gap: var(--tbo-e2);
-  min-height: 42px; padding: 0 var(--tbo-e4);
-  border:1px solid var(--tbo-borde-firme); border-radius: var(--tbo-r-sm);
-  background: var(--tbo-sup); color: var(--tbo-texto);
-  font-family: var(--tbo-cuerpo); font-size:14px; font-weight:500;
-  cursor:pointer; transition: background .15s ease, border-color .15s ease;
-}
-.tbo-btn:hover{ background: var(--tbo-sup-2); border-color: var(--tbo-texto-3); }
-.tbo-btn:disabled{ opacity:.45; cursor:not-allowed; }
+.fechas{display:flex;gap:8px;overflow-x:auto;padding-bottom:6px}
+.fecha{flex-shrink:0;background:var(--sup);border-radius:14px;min-width:58px;padding:12px 8px;text-align:center;cursor:pointer;border:1px solid var(--borde);transition:all .3s var(--resorte)}
+.fecha.sel{border-color:var(--ambar);background:linear-gradient(135deg,rgba(224,161,74,.14),var(--sup));transform:translateY(-3px);box-shadow:0 8px 18px -6px rgba(224,161,74,.35)}
+.f-num{font-family:var(--display);font-weight:500;font-size:19px;color:var(--texto)}
+.fecha.sel .f-num{color:var(--ambar)}
+.f-dow{font-size:9.5px;color:var(--texto-2);text-transform:uppercase}
+.f-mes{font-size:9.5px;color:var(--texto-3)}
 
-.tbo-btn--primario{ background: var(--tbo-tinta); color:#F5F5F3; border-color: var(--tbo-tinta); }
-.tbo-btn--primario:hover{ background:#000; border-color:#000; }
-html[data-tema="oscuro"] .tbo-btn--primario{ background: var(--tbo-ambar); color: var(--tbo-tinta); border-color: var(--tbo-ambar); }
-html[data-tema="oscuro"] .tbo-btn--primario:hover{ background: var(--tbo-ambar-claro); }
+.barb-toggle{font-size:13px;color:var(--texto-2);margin:0 0 16px;cursor:pointer}
+.barb-toggle span{color:var(--ambar);text-decoration:underline}
+.avatares{display:flex;gap:16px;margin-bottom:16px}
+.av{text-align:center;cursor:pointer;width:56px}
+.av-c{width:50px;height:50px;margin:0 auto 5px;border-radius:50%;background:linear-gradient(160deg,var(--sup-2),var(--sup));
+  border:1px solid var(--borde-firme);display:flex;align-items:center;justify-content:center;font-family:var(--display);font-size:16px;color:var(--texto-2);transition:all .35s var(--resorte)}
+.av.sel .av-c{border-color:var(--ambar);color:var(--ambar);transform:translateY(-4px) scale(1.06);box-shadow:0 0 0 5px var(--ambar-tenue),0 10px 20px -8px rgba(224,161,74,.5)}
+.av-n{font-size:10.5px;color:var(--texto-2)}
 
-.tbo-btn--fantasma{ background: transparent; border-color: var(--tbo-borde); color: var(--tbo-texto-2); }
-.tbo-btn--peligro{ background: transparent; border-color: var(--tbo-error); color: var(--tbo-error); }
-.tbo-btn--peligro:hover{ background: var(--tbo-error); color:#fff; }
+.horas{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.hora{background:var(--sup);border-radius:11px;padding:11px 4px;text-align:center;font-family:var(--cifra);font-size:13px;color:var(--texto);cursor:pointer;border:1px solid var(--borde);transition:all .3s var(--resorte)}
+.hora.sel{border-color:var(--ambar);background:linear-gradient(135deg,var(--ambar-claro),var(--ambar));color:var(--tinta);font-weight:600;transform:scale(1.04);box-shadow:0 8px 18px -6px rgba(224,161,74,.5)}
 
-.tbo-etiqueta{ display:block; margin-bottom: var(--tbo-e1); font-size:11px; text-transform:uppercase; letter-spacing:.12em; color: var(--tbo-texto-2); }
-.tbo-campo{
-  width:100%; min-height:42px; padding: 0 var(--tbo-e3);
-  background: var(--tbo-sup); color: var(--tbo-texto);
-  border:1px solid var(--tbo-borde-firme); border-radius: var(--tbo-r-sm);
-  font-family: var(--tbo-cuerpo); font-size:15px;
-}
-textarea.tbo-campo{ min-height:80px; padding: var(--tbo-e2) var(--tbo-e3); line-height:1.5; }
-.tbo-campo::placeholder{ color: var(--tbo-texto-3); }
-.tbo-campo:focus{ outline:none; border-color: var(--tbo-ambar); box-shadow: 0 0 0 3px var(--tbo-ambar-tenue); }
+.fi{width:100%;padding:13px 14px;font-size:15px;font-family:var(--cuerpo);color:var(--texto);background:var(--sup);border:1px solid var(--borde);border-radius:11px;margin-bottom:14px;transition:border-color .3s ease,box-shadow .3s ease}
+.fi:focus{outline:none;border-color:var(--ambar);box-shadow:0 0 0 4px var(--ambar-tenue)}
+.fi::placeholder{color:var(--texto-3)}
+.fl{font-size:10.5px;text-transform:uppercase;letter-spacing:.1em;color:var(--texto-2);display:block;margin-bottom:6px}
 
-.tbo-chip{
-  display:inline-flex; align-items:center; gap:6px;
-  min-height:32px; padding: 0 var(--tbo-e3);
-  border:1px solid var(--tbo-borde); border-radius:999px;
-  background: var(--tbo-sup); color: var(--tbo-texto-2);
-  font-size:13px; cursor:pointer;
-}
-.tbo-chip--activo{ border-color: var(--tbo-ambar); color: var(--tbo-texto); background: var(--tbo-ambar-tenue); font-weight:500; }
-.tbo-chip--apagado{ opacity:.5; }
+.resumen{background:var(--sup);border-radius:16px;padding:18px;border:1px solid var(--borde);position:relative;overflow:hidden}
+.resumen::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--ambar),transparent)}
+.r-row{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--borde);font-size:13px}
+.r-row:last-child{border-bottom:none}
+.r-l{color:var(--texto-2)} .r-v{color:var(--texto);font-weight:500}
 
-.tbo-vacio{ padding: var(--tbo-e6) var(--tbo-e4); text-align:center; color: var(--tbo-texto-2); }
-.tbo-error{ padding: var(--tbo-e3); border-radius: var(--tbo-r-sm); border:1px solid var(--tbo-error); color: var(--tbo-error); background: transparent; font-size:14px; }
+.actions{position:fixed;left:0;right:0;bottom:0;padding:16px 20px calc(16px + env(safe-area-inset-bottom));max-width:480px;margin:0 auto;background:linear-gradient(180deg,transparent,var(--tinta) 44%);z-index:20}
+.row-btns{display:flex;gap:10px}
+.btn-back{flex-shrink:0;width:48px;height:48px;border-radius:12px;border:1px solid var(--borde-firme);background:var(--sup);color:var(--texto);display:flex;align-items:center;justify-content:center;cursor:pointer}
+.btn-next{flex:1;min-height:48px;border:none;border-radius:12px;position:relative;overflow:hidden;
+  background:linear-gradient(135deg,var(--ambar-claro),var(--ambar));color:var(--tinta);font-weight:700;font-size:15px;cursor:pointer;
+  box-shadow:0 10px 24px -8px rgba(224,161,74,.5);transition:transform .2s var(--resorte)}
+.btn-next:active{transform:scale(.97)}
+.btn-next::after{content:'';position:absolute;inset:0;background:linear-gradient(100deg,transparent 40%,rgba(255,255,255,.45) 50%,transparent 60%);
+  background-size:200% 100%;animation:sheen 2.6s ease-in-out infinite}
+.btn-next:disabled{opacity:.3;box-shadow:none}
+.btn-next:disabled::after{display:none}
 
-:where(a, button, input, select, textarea, [tabindex]):focus-visible{ outline: 2px solid var(--tbo-ambar); outline-offset: 2px; }
-
-@keyframes tboAparece { from { opacity:0; transform: translateY(10px); } to { opacity:1; transform: translateY(0); } }
-
-@media (prefers-reduced-motion: reduce){
-  *, *::before, *::after{ animation-duration:.01ms !important; transition-duration:.01ms !important; }
-}
-
-/* ============================================================
-   RESERVAR — flujo de 5 pasos (cara al cliente)
-   Capa específica de esta página. Todo usa var(--tbo-*) de arriba;
-   nada de colores sueltos, para que quede idéntico a agenda.html.
-   ============================================================ */
-    *{ box-sizing:border-box; }
-    html, body{ margin:0; padding:0; }
-    body{ min-height:100vh; position:relative; overflow-x:hidden; }
-    .app{ max-width:480px; margin:0 auto; padding-bottom:3rem; position:relative; z-index:1; }
-
-    /* ===== "mármol" — el blanco real del local, mismos tonos que usa
-       agenda.html en su tema claro. Se usa aquí como superficie de las
-       tarjetas para que el negocio se vea tan blanco/ámbar como es. ===== */
-    :root{
-      --tbo-marmol-sup:         #FFFFFF;
-      --tbo-marmol-sup-2:       #FAFAFB;
-      --tbo-marmol-borde:       #E2E5EA;
-      --tbo-marmol-borde-firme: #C7CCD4;
-      --tbo-marmol-texto:       #16181C;
-      --tbo-marmol-texto-2:     #6B717B;
-      --tbo-marmol-texto-3:     #9AA0AA;
-      --tbo-marmol-tenue:       #FBF4E9;   /* mármol bajo la luz ámbar del plafón */
-      --tbo-marmol-sombra:      0 20px 44px -14px rgba(0,0,0,.55), 0 5px 14px rgba(0,0,0,.3);
-      --tbo-marmol-sombra-amb:  0 16px 36px -12px rgba(224,161,74,.4), 0 4px 10px rgba(0,0,0,.3);
-    }
-
-    /* difuminados ambientales: luz ámbar del plafón + un respiro de mármol,
-       fijos sobre el negro para dar atmósfera sin robarle protagonismo al negro. */
-    body::before, body::after{ content:''; position:fixed; z-index:0; pointer-events:none; border-radius:50%; filter:blur(70px); }
-    body::before{ top:-140px; left:50%; width:420px; height:300px; transform:translateX(-50%);
-      background:radial-gradient(circle, rgba(224,161,74,.28), transparent 70%);
-      animation: difuminadoDeriva 14s ease-in-out infinite alternate; }
-    body::after{ bottom:-160px; right:-80px; width:320px; height:320px;
-      background:radial-gradient(circle, rgba(245,245,243,.05), transparent 70%); }
-    @keyframes difuminadoDeriva{ from{ opacity:.85; transform:translateX(-50%) translateY(0); } to{ opacity:1; transform:translateX(-46%) translateY(10px); } }
-
-    @keyframes fadeUp{ from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:translateY(0);} }
-    @keyframes popIn{ from{opacity:0; transform:scale(.94);} to{opacity:1; transform:scale(1);} }
-    @keyframes shimmer{ 0%{background-position:-300px 0;} 100%{background-position:300px 0;} }
-
-    /* ===== HEADER ===== */
-    .reservar-header{
-      text-align:center; padding: var(--tbo-e6) var(--tbo-e4) var(--tbo-e4);
-      border-bottom:1px solid var(--tbo-borde); box-shadow: var(--tbo-cove);
-      animation: tboAparece .5s ease both; position:relative; overflow:hidden;
-    }
-    .reservar-header .tbo-marca{ justify-content:center; position:relative; z-index:1; }
-    .reservar-header .tbo-marca__sub{ margin-top:2px; }
-    /* el nombre de la barbería debe pesar en pantalla — más grande que el
-       resto de las apariciones del componente en el sistema */
-    .reservar-header .tbo-marca__nombre{ font-size:clamp(25px, 7.6vw, 34px); }
-    .reservar-header .tbo-marca__nombre .tbo-marca__acento{ color:var(--tbo-ambar); }
-
-    /* ===== STEPS ===== */
-    .steps{ display:flex; justify-content:center; gap:0; padding:1.1rem 1rem 0; animation: tboAparece .5s .06s ease both; }
-    .step{ flex:1; text-align:center; position:relative; }
-    .step::after{ content:''; position:absolute; top:13px; left:50%; width:100%; height:1px; background:var(--tbo-borde); z-index:0; transition:background-color .35s ease; }
-    .step:last-child::after{ display:none; }
-    .step.done::after{ background:var(--tbo-ambar); }
-    .step-num{
-      width:25px; height:25px; border-radius:50%; background:var(--tbo-marmol-sup); border:1px solid var(--tbo-marmol-borde-firme);
-      color:var(--tbo-marmol-texto-2); font-size:11px; font-weight:500; font-family:var(--tbo-cuerpo);
-      display:flex; align-items:center; justify-content:center; margin:0 auto 5px; position:relative; z-index:1;
-      transition:all .25s ease; box-shadow:0 2px 6px rgba(0,0,0,.35);
-    }
-    .step.active .step-num{ background:var(--tbo-ambar); color:var(--tbo-tinta); border-color:var(--tbo-ambar); box-shadow:0 0 0 3px var(--tbo-ambar-tenue); }
-    .step.done .step-num{ background:var(--tbo-marmol-sup); color:var(--tbo-ambar); border-color:var(--tbo-ambar); font-size:0; }
-    .step.done .step-num::after{ content:'✓'; font-size:11px; }
-    .step-label{ font-family:var(--tbo-display); font-weight:400; font-size:9.5px; color:var(--tbo-texto-3); text-transform:uppercase; letter-spacing:.1em; transition:color .25s ease; }
-    .step.active .step-label{ color:var(--tbo-texto); }
-    .step.done .step-label{ color:var(--tbo-texto-2); }
-
-    /* ===== SECTIONS ===== */
-    .section{ padding:1.4rem 1.1rem 0; display:none; }
-    .section.active{ display:block; }
-    @keyframes slideInFwd{ from{opacity:0; transform:translateX(18px);} to{opacity:1; transform:translateX(0);} }
-    @keyframes slideOutFwd{ from{opacity:1; transform:translateX(0);} to{opacity:0; transform:translateX(-18px);} }
-    @keyframes slideInBack{ from{opacity:0; transform:translateX(-18px);} to{opacity:1; transform:translateX(0);} }
-    @keyframes slideOutBack{ from{opacity:1; transform:translateX(0);} to{opacity:0; transform:translateX(18px);} }
-    .section-title{ font-family:var(--tbo-display); font-size:19px; font-weight:400; color:var(--tbo-texto); margin-bottom:.3rem; }
-    .section-sub{ font-size:12.5px; color:var(--tbo-texto-2); margin-bottom:1.15rem; }
-
-    /* ===== SERVICIOS ===== */
-    .servicios-grid{ display:grid; grid-template-columns:1fr 1fr; gap:9px; }
-    .srv-card{
-      background:var(--tbo-marmol-sup); border:1px solid var(--tbo-marmol-borde); border-radius:var(--tbo-r);
-      padding:.85rem .8rem; cursor:pointer; transition:border-color .18s ease, background .18s ease, box-shadow .18s ease, transform .18s ease;
-      position:relative; animation:fadeUp .35s ease backwards; box-shadow:var(--tbo-marmol-sombra);
-    }
-    .servicios-grid .srv-card:nth-child(1){animation-delay:.02s} .servicios-grid .srv-card:nth-child(2){animation-delay:.06s}
-    .servicios-grid .srv-card:nth-child(3){animation-delay:.10s} .servicios-grid .srv-card:nth-child(4){animation-delay:.14s}
-    .servicios-grid .srv-card:nth-child(5){animation-delay:.18s} .servicios-grid .srv-card:nth-child(6){animation-delay:.22s}
-    .servicios-grid .srv-card:nth-child(7){animation-delay:.26s} .servicios-grid .srv-card:nth-child(8){animation-delay:.30s}
-    .servicios-grid .srv-card:nth-child(n+9){animation-delay:.34s}
-    .srv-card:hover{ border-color:var(--tbo-marmol-borde-firme); transform:translateY(-2px); box-shadow:0 24px 48px -14px rgba(0,0,0,.6), 0 6px 16px rgba(0,0,0,.32); }
-    .srv-card:active{ transform:scale(.98); }
-    .srv-card.selected{ border-color:var(--tbo-ambar); background:var(--tbo-marmol-tenue); box-shadow:var(--tbo-marmol-sombra-amb); }
-    .srv-nombre{ font-size:13.5px; font-weight:500; color:var(--tbo-marmol-texto); padding-right:16px; }
-    .srv-duracion{ font-family:var(--tbo-cifra); font-size:11px; color:var(--tbo-marmol-texto-2); margin-top:4px; }
-    .info-btn{ position:absolute; top:8px; right:8px; background:none; border:none; color:var(--tbo-ambar); font-size:15px; cursor:pointer; padding:2px 4px; line-height:1; transition:transform .15s ease; }
-    .info-btn:hover{ color:#c5883b; transform:scale(1.12); }
-    .srv-desc{ margin-top:8px; font-size:11px; color:var(--tbo-marmol-texto-2); line-height:1.55; border-top:1px solid var(--tbo-marmol-borde); padding-top:8px; display:none; }
-    .srv-desc.open{ display:block; animation:fadeUp .2s ease both; }
-    .sep-label{ grid-column:1/-1; font-family:var(--tbo-display); font-size:11px; color:var(--tbo-ambar); text-transform:uppercase; letter-spacing:.14em; padding:10px 0 3px; border-top:1px solid var(--tbo-borde); margin-top:5px; font-weight:400; }
-    .loading-inline{ grid-column:1/-1; text-align:center; color:var(--tbo-texto-3); font-size:13px; padding:1.5rem 0; }
-
-    .skel-grid{ grid-column:1/-1; display:grid; grid-template-columns:1fr 1fr; gap:9px; }
-    .skel-card{ height:64px; border-radius:var(--tbo-r); background:linear-gradient(90deg, var(--tbo-marmol-sup-2) 25%, #FFFFFF 37%, var(--tbo-marmol-sup-2) 63%); background-size:400px 100%; animation:shimmer 1.4s ease-in-out infinite; border:1px solid var(--tbo-marmol-borde); box-shadow:var(--tbo-marmol-sombra); }
-
-    /* ===== FECHAS ===== */
-    .fechas-row{ display:flex; gap:8px; overflow-x:auto; padding-bottom:6px; scrollbar-width:none; }
-    .fechas-row::-webkit-scrollbar{ display:none; }
-    .fecha-card{
-      flex-shrink:0; background:var(--tbo-marmol-sup); border:1px solid var(--tbo-marmol-borde); border-radius:var(--tbo-r);
-      padding:.65rem .8rem; cursor:pointer; text-align:center; min-width:58px; box-shadow:var(--tbo-marmol-sombra);
-      transition:border-color .18s ease, background .18s ease, transform .18s ease, box-shadow .18s ease; animation:fadeUp .3s ease backwards;
-      animation-delay:calc(var(--i,0) * 22ms);
-    }
-    .fecha-card:hover{ border-color:var(--tbo-marmol-borde-firme); transform:translateY(-2px); }
-    .fecha-card:active{ transform:scale(.96); }
-    .fecha-card.selected{ border-color:var(--tbo-ambar); background:var(--tbo-marmol-tenue); box-shadow:var(--tbo-marmol-sombra-amb); }
-    .fecha-dia-num{ font-family:var(--tbo-cifra); font-size:18px; font-weight:500; color:var(--tbo-marmol-texto); }
-    .fecha-card.selected .fecha-dia-num{ color:var(--tbo-ambar); }
-    .fecha-dia-nom{ font-size:10px; color:var(--tbo-marmol-texto-2); text-transform:uppercase; letter-spacing:.04em; }
-    .fecha-mes{ font-size:10px; color:var(--tbo-marmol-texto-3); margin-top:2px; }
-
-    /* ===== BARBERO ===== */
-    .barbero-toggle{ font-size:13px; color:var(--tbo-texto-2); margin-bottom:1rem; cursor:pointer; }
-    .toggle-link{ color:var(--tbo-ambar); text-decoration:underline; margin-left:4px; }
-    .barb-chips{ display:flex; gap:7px; flex-wrap:wrap; margin-bottom:1.1rem; }
-    .barb-chips .tbo-chip{ animation:popIn .28s ease backwards; }
-    .barb-chips .tbo-chip:nth-child(1){animation-delay:.02s} .barb-chips .tbo-chip:nth-child(2){animation-delay:.06s}
-    .barb-chips .tbo-chip:nth-child(3){animation-delay:.10s} .barb-chips .tbo-chip:nth-child(n+4){animation-delay:.14s}
-
-    /* ===== HORARIOS ===== */
-    .horarios-grid{ display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; }
-    .hora-card{
-      background:var(--tbo-marmol-sup); border:1px solid var(--tbo-marmol-borde); border-radius:var(--tbo-r-sm);
-      padding:.62rem; text-align:center; cursor:pointer; font-family:var(--tbo-cifra); font-size:13px; color:var(--tbo-marmol-texto); font-weight:500;
-      transition:border-color .16s ease, background .16s ease, transform .16s ease; animation:fadeUp .28s ease backwards; box-shadow:var(--tbo-marmol-sombra);
-    }
-    .horarios-grid .hora-card:nth-child(1){animation-delay:.01s} .horarios-grid .hora-card:nth-child(2){animation-delay:.03s} .horarios-grid .hora-card:nth-child(3){animation-delay:.05s}
-    .horarios-grid .hora-card:nth-child(4){animation-delay:.07s} .horarios-grid .hora-card:nth-child(5){animation-delay:.09s} .horarios-grid .hora-card:nth-child(6){animation-delay:.11s}
-    .horarios-grid .hora-card:nth-child(7){animation-delay:.13s} .horarios-grid .hora-card:nth-child(8){animation-delay:.15s} .horarios-grid .hora-card:nth-child(9){animation-delay:.17s}
-    .horarios-grid .hora-card:nth-child(n+10){animation-delay:.19s}
-    .hora-card:hover{ border-color:var(--tbo-marmol-borde-firme); transform:translateY(-1px); }
-    .hora-card:active{ transform:scale(.95); }
-    .hora-card.selected{ border-color:var(--tbo-ambar); background:var(--tbo-ambar); color:var(--tbo-tinta); font-weight:600; box-shadow:var(--tbo-marmol-sombra-amb); }
-    .no-disponible{ text-align:center; padding:2.2rem 1rem; color:var(--tbo-texto-3); font-size:13.5px; line-height:1.6; animation:fadeUp .3s ease both; }
-
-    /* ===== DATOS ===== */
-    .fg{ margin-bottom:14px; animation:fadeUp .3s ease both; }
-    .fg .tbo-campo{ background:var(--tbo-marmol-sup); color:var(--tbo-marmol-texto); border-color:var(--tbo-marmol-borde-firme); box-shadow:var(--tbo-marmol-sombra); }
-    .fg .tbo-campo::placeholder{ color:var(--tbo-marmol-texto-3); }
-
-    /* ===== RESUMEN ===== */
-    .resumen-card{ animation:fadeUp .35s ease both; margin-bottom:1.1rem; background:var(--tbo-marmol-sup); border-color:var(--tbo-marmol-borde); box-shadow:var(--tbo-marmol-sombra); }
-    .res-row{ display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid var(--tbo-marmol-borde); font-size:13px; gap:12px; }
-    .res-row:last-child{ border-bottom:none; }
-    .res-lbl{ color:var(--tbo-marmol-texto-2); }
-    .res-val{ color:var(--tbo-marmol-texto); font-weight:500; text-align:right; }
-    .res-val.cifra{ font-family:var(--tbo-cifra); }
-
-    /* ===== BOTONES DE FLUJO ===== */
-    .btn-primary{ width:100%; margin-top:1rem; font-size:15px; }
-    .btn-primary:disabled{ opacity:.35; }
-    .btn-secondary{ width:100%; margin-top:9px; border-color:rgba(245,245,243,.22); color:var(--tbo-texto); }
-    .btn-secondary:hover{ border-color:rgba(245,245,243,.42); background:rgba(245,245,243,.06); }
-
-    /* ===== CONFIRMACION ===== */
-    .confirmacion{ display:none; flex-direction:column; align-items:center; text-align:center; padding:3.2rem 1.6rem 2rem; position:relative; z-index:1; }
-    .conf-icon-wrap{ width:88px; height:88px; border-radius:50%; display:flex; align-items:center; justify-content:center; margin-bottom:1.3rem; background:var(--tbo-ambar-tenue); animation:popIn .45s ease both; position:relative; }
-    .conf-icon-wrap::before{ content:''; position:absolute; inset:0; border-radius:50%; border:1px solid var(--tbo-ambar); opacity:.5; animation:ringPulse 1.9s ease-out .3s infinite; }
-    @keyframes ringPulse{ 0%{ transform:scale(.88); opacity:.55;} 100%{ transform:scale(1.4); opacity:0;} }
-    .conf-icon{ width:48px; height:48px; }
-    .conf-icon circle{ stroke:var(--tbo-ambar); stroke-width:1.6; fill:none; stroke-dasharray:151; stroke-dashoffset:151; animation:drawCircle .6s .1s ease forwards; }
-    .conf-icon path{ stroke:var(--tbo-ambar); stroke-width:2.2; fill:none; stroke-linecap:round; stroke-linejoin:round; stroke-dasharray:34; stroke-dashoffset:34; animation:drawCheck .4s .55s ease forwards; }
-    @keyframes drawCircle{ to{ stroke-dashoffset:0; } }
-    @keyframes drawCheck{ to{ stroke-dashoffset:0; } }
-    .conf-titulo{ font-family:var(--tbo-display); font-size:22px; font-weight:400; margin-bottom:.5rem; color:var(--tbo-texto); animation:fadeUp .4s .5s ease both; }
-    .conf-sub{ font-size:14px; color:var(--tbo-texto-2); line-height:1.6; margin-bottom:1.8rem; animation:fadeUp .4s .58s ease both; }
-    .conf-card{ width:100%; margin-bottom:1.6rem; text-align:left; animation:fadeUp .4s .66s ease both; background:var(--tbo-marmol-sup); border-color:var(--tbo-marmol-borde); box-shadow:var(--tbo-marmol-sombra); }
-    .conf-card .res-row{ border-bottom-color:var(--tbo-marmol-borde); }
-    .conf-card .res-lbl{ color:var(--tbo-marmol-texto-2); }
-    .conf-card .res-val{ color:var(--tbo-marmol-texto); }
-
-    .confetti-layer{ position:absolute; inset:0; overflow:hidden; pointer-events:none; z-index:0; }
-    .confetti-piece{ position:absolute; top:-10px; width:6px; height:10px; opacity:.85; border-radius:1px; animation:confettiFall linear forwards; }
-    @keyframes confettiFall{ 0%{ transform:translateY(0) rotate(0deg); opacity:1; } 100%{ transform:translateY(320px) rotate(480deg); opacity:0; } }
-
-    .loading{ text-align:center; padding:2.2rem 0; color:var(--tbo-texto-3); font-size:13.5px; }
-    .loading::after{ content:'●●●'; display:block; margin-top:8px; letter-spacing:4px; color:var(--tbo-ambar); animation:dots 1.1s ease-in-out infinite; font-size:8px; }
-    @keyframes dots{ 0%,100%{ opacity:.25; } 50%{ opacity:1; } }
-
-    .toast{
-      position:fixed; bottom:1.6rem; left:50%; transform:translateX(-50%) translateY(16px); background:var(--tbo-ambar); color:var(--tbo-tinta);
-      padding:.65rem 1.2rem; border-radius:24px; font-size:13px; z-index:100; display:none; font-weight:600;
-      box-shadow:0 10px 24px rgba(0,0,0,.35); font-family:var(--tbo-cuerpo);
-    }
-    .toast.show{ display:block; animation:toastIn .3s ease forwards; }
-    .toast.hide{ animation:toastOut .25s ease forwards; }
-    @keyframes toastIn{ from{ opacity:0; transform:translateX(-50%) translateY(16px);} to{ opacity:1; transform:translateX(-50%) translateY(0);} }
-    @keyframes toastOut{ from{ opacity:1; transform:translateX(-50%) translateY(0);} to{ opacity:0; transform:translateX(-50%) translateY(10px);} }
-
-    /* ===== WHATSAPP — círculo minimalista, disimulado ===== */
-    .wa-float{
-      position:fixed; bottom:1.4rem; right:1rem; width:46px; height:46px; border-radius:50%;
-      background:#1f2a24; border:1px solid var(--tbo-borde-firme);
-      display:flex; align-items:center; justify-content:center;
-      text-decoration:none; z-index:50; box-shadow:var(--tbo-sombra);
-      transition:transform .18s ease, border-color .18s ease, background .18s ease;
-      animation:popIn .4s .5s ease both;
-    }
-    .wa-float svg{ width:20px; height:20px; }
-    .wa-float:hover{ transform:scale(1.07); border-color:#25d366; background:#1c2b21; }
-    .wa-float:active{ transform:scale(.96); }
-
-    @media (prefers-reduced-motion: reduce){
-      *, *::before, *::after{ animation-duration:.001ms !important; animation-iteration-count:1 !important; transition-duration:.001ms !important; }
-    }
-  </style>
+.confirm{display:none;flex-direction:column;align-items:center;text-align:center;padding:60px 20px 0;position:relative;z-index:1}
+.confirm.show{display:flex;animation:entra .5s var(--resorte) both}
+.seal-wrap{position:relative;width:96px;height:96px;margin-bottom:20px;display:flex;align-items:center;justify-content:center}
+.seal-ring{position:absolute;inset:0;border-radius:50%;border:1px solid var(--ambar);opacity:0;animation:pulso 1.8s ease-out 1 both}
+.seal-ring.r2{animation-delay:.25s}
+@keyframes pulso{0%{opacity:.7;transform:scale(.6)}100%{opacity:0;transform:scale(1.6)}}
+.seal{width:74px;height:74px;border-radius:50%;background:linear-gradient(150deg,var(--ambar-claro),var(--ambar));display:flex;align-items:center;justify-content:center;
+  box-shadow:0 12px 30px -8px rgba(224,161,74,.6);animation:stampin .55s .1s var(--resorte) both}
+@keyframes stampin{from{opacity:0;transform:scale(.4) rotate(-25deg)}to{opacity:1;transform:scale(1) rotate(0)}}
+.seal svg{width:32px;height:32px}
+.seal path{stroke:var(--tinta);stroke-width:3;fill:none;stroke-linecap:round;stroke-linejoin:round;
+  stroke-dasharray:20;stroke-dashoffset:20;animation:draw .4s .5s ease forwards}
+@keyframes draw{to{stroke-dashoffset:0}}
+.c-titulo{font-family:var(--display);font-size:22px;margin-bottom:6px}
+.c-sub{font-size:13px;color:var(--texto-2);margin-bottom:20px}
+.ticket{width:100%;background:var(--sup);border-radius:16px;overflow:hidden;border:1px solid var(--borde);text-align:left}
+.t-head{background:linear-gradient(135deg,#151517,#0c0c0e);padding:16px;text-align:center;position:relative}
+.t-head::after{content:'';position:absolute;bottom:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--ambar),transparent)}
+.t-head b{font-family:var(--display);font-weight:400;font-size:15px;color:var(--texto)}
+.t-head div{font-size:9.5px;letter-spacing:.18em;color:var(--ambar);text-transform:uppercase;margin-top:4px}
+.t-body{padding:6px 18px 16px}
+.nota{font-size:10px;color:var(--texto-3);text-align:center;margin-top:20px}
+</style>
 </head>
-<body class="tbo">
+<body>
+<div class="ambiente"></div>
+<div class="plafon"></div>
 <div class="app">
-  <div class="reservar-header">
-    <div class="tbo-marca tbo-marca--sobre-oscuro">
-      <div class="tbo-marca__ancla">
-        <div class="tbo-marca__nombre">The Barber <span class="tbo-marca__acento">One</span></div>
-        <div class="tbo-marca__raya"></div>
-      </div>
-      <div class="tbo-marca__sub">Agenda tu cita</div>
-    </div>
+  <div class="header">
+    <div class="h-kicker">Barbería · Est. Local</div>
+    <div class="h-nombre">The Barber <span class="one">One</span></div>
+    <div class="h-raya"></div>
+    <div class="h-tag">La excelencia cerca de ti</div>
   </div>
 
-  <!-- STEPS -->
-  <div class="steps">
-    <div class="step active" id="step-1"><div class="step-num">1</div><div class="step-label">Servicio</div></div>
-    <div class="step" id="step-2"><div class="step-num">2</div><div class="step-label">Fecha</div></div>
-    <div class="step" id="step-3"><div class="step-num">3</div><div class="step-label">Horario</div></div>
-    <div class="step" id="step-4"><div class="step-num">4</div><div class="step-label">Tus datos</div></div>
-    <div class="step" id="step-5"><div class="step-num">5</div><div class="step-label">Confirmar</div></div>
-  </div>
+  <div class="steps" id="steps"></div>
 
-  <!-- PASO 1: SERVICIO -->
   <div class="section active" id="sec-1">
-    <div class="section-title">¿Qué servicio deseas?</div>
-    <div class="section-sub">Selecciona un servicio para comenzar</div>
-    <div class="servicios-grid" id="servicios-grid"><div class="skel-grid"><div class="skel-card"></div><div class="skel-card"></div><div class="skel-card"></div><div class="skel-card"></div></div></div>
-    <button class="tbo-btn tbo-btn--primario btn-primary" id="btn-1" onclick="irPaso(2)" disabled>Continuar</button>
+    <div class="s-title">¿Qué servicio deseas?</div>
+    <div class="s-sub">Selecciona un servicio para comenzar</div>
+    <div class="lista" id="servicios"></div>
   </div>
-
-  <!-- PASO 2: FECHA -->
   <div class="section" id="sec-2">
-    <div class="section-title">¿Cuándo quieres venir?</div>
-    <div class="section-sub">Selecciona un día disponible</div>
-    <div class="fechas-row" id="fechas-row"></div>
-    <button class="tbo-btn tbo-btn--primario btn-primary" id="btn-2" onclick="irPaso(3)" disabled>Continuar</button>
-    <button class="tbo-btn tbo-btn--fantasma btn-secondary" onclick="irPaso(1)">← Regresar</button>
+    <div class="s-title">¿Cuándo quieres venir?</div>
+    <div class="s-sub">Selecciona un día disponible</div>
+    <div class="fechas" id="fechas"></div>
   </div>
-
-  <!-- PASO 3: HORARIO + BARBERO -->
   <div class="section" id="sec-3">
-    <div class="section-title">Elige tu horario</div>
-    <div class="section-sub" id="horarios-sub">Horarios disponibles</div>
-    <div class="barbero-toggle" id="barbero-toggle" onclick="mostrarBarberos()">¿Tienes un barbero de preferencia? <span class="toggle-link">Elegir</span></div>
-    <div class="barb-chips" id="barbero-chips" style="display:none"></div>
-    <div id="horarios-contenido"><div class="loading">Verificando disponibilidad</div></div>
-    <button class="tbo-btn tbo-btn--primario btn-primary" id="btn-3" onclick="irPaso(4)" disabled>Continuar</button>
-    <button class="tbo-btn tbo-btn--fantasma btn-secondary" onclick="irPaso(2)">← Regresar</button>
+    <div class="s-title">Elige tu horario</div>
+    <div class="s-sub" id="hsub">Horarios disponibles</div>
+    <div class="barb-toggle" id="btoggle">¿Tienes un barbero de preferencia? <span>Elegir</span></div>
+    <div class="avatares" id="avatares" style="display:none"></div>
+    <div class="horas" id="horas"></div>
   </div>
-
-  <!-- PASO 4: DATOS -->
   <div class="section" id="sec-4">
-    <div class="section-title">Tus datos</div>
-    <div class="section-sub">Para confirmar tu cita</div>
-    <div class="fg"><label class="tbo-etiqueta">Nombre completo</label><input class="tbo-campo" type="text" id="d-nombre" placeholder="Tu nombre" /></div>
-    <div class="fg">
-      <label class="tbo-etiqueta">WhatsApp <span style="color:var(--tbo-alerta)">*</span></label>
-      <input class="tbo-campo" type="tel" id="d-telefono" placeholder="10 dígitos (obligatorio)" inputmode="numeric" required/>
-      <div style="font-size:11px;color:var(--tbo-ambar);margin-top:6px;">⚠️ Si tu cita no es aceptada te contactaremos por este número</div>
-    </div>
-    <div class="fg"><label class="tbo-etiqueta">Comentario (opcional)</label><input class="tbo-campo" type="text" id="d-comentario" placeholder="Ej: llego 10 min tarde, alguna preferencia..." /></div>
-    <button class="tbo-btn tbo-btn--primario btn-primary" onclick="irPaso(5)">Continuar</button>
-    <button class="tbo-btn tbo-btn--fantasma btn-secondary" onclick="irPaso(3)">← Regresar</button>
+    <div class="s-title">Tus datos</div>
+    <div class="s-sub">Para confirmar tu cita</div>
+    <label class="fl">Nombre completo</label><input class="fi" id="d-nombre" placeholder="Tu nombre">
+    <label class="fl">WhatsApp</label><input class="fi" id="d-tel" placeholder="10 dígitos" inputmode="numeric">
   </div>
-
-  <!-- PASO 5: RESUMEN -->
   <div class="section" id="sec-5">
-    <div class="section-title">Confirma tu cita</div>
-    <div class="section-sub">Revisa los detalles antes de reservar</div>
-    <div class="tbo-tarjeta resumen-card" id="resumen-card"></div>
-    <button class="tbo-btn tbo-btn--primario btn-primary" onclick="enviarSolicitud()">Reservar cita</button>
-    <button class="tbo-btn tbo-btn--fantasma btn-secondary" onclick="irPaso(4)">← Regresar</button>
+    <div class="s-title">Confirma tu cita</div>
+    <div class="s-sub">Revisa los detalles antes de reservar</div>
+    <div class="resumen" id="resumen"></div>
   </div>
 
-  <!-- CONFIRMACION FINAL -->
-  <div class="confirmacion" id="confirmacion">
-    <div class="confetti-layer" id="confetti-layer"></div>
-    <div class="conf-icon-wrap">
-      <svg class="conf-icon" viewBox="0 0 52 52">
-        <circle cx="26" cy="26" r="24"/>
-        <path d="M15 27l7 7 15-15"/>
-      </svg>
+  <div class="confirm" id="confirm">
+    <div class="seal-wrap">
+      <div class="seal-ring"></div><div class="seal-ring r2"></div>
+      <div class="seal"><svg viewBox="0 0 24 24"><path d="M5 13l4 4 10-10"/></svg></div>
     </div>
-    <div class="conf-titulo">¡Cita confirmada!</div>
-    <div class="conf-sub">Tu cita quedó agendada. ¡Te esperamos!</div>
-    <div class="tbo-tarjeta conf-card"><div class="tbo-tarjeta__cuerpo" id="conf-resumen"></div></div>
-    <button class="tbo-btn tbo-btn--primario btn-primary" onclick="reiniciar()" style="margin-top:.2rem;">Reservar otra cita</button>
+    <div class="c-titulo">¡Cita confirmada!</div>
+    <div class="c-sub">Te esperamos.</div>
+    <div class="ticket"><div class="t-head"><b>The Barber One</b><div>Cita confirmada</div></div><div class="t-body" id="tbody"></div></div>
   </div>
 </div>
 
-<div class="toast" id="toast"></div>
+<div class="actions" id="actions">
+  <div class="row-btns">
+    <button class="btn-back" id="back" style="display:none">←</button>
+    <button class="btn-next" id="next" disabled>Continuar</button>
+  </div>
+</div>
 
-<a href="https://wa.me/522223424630" target="_blank" class="wa-float" title="Escríbenos por WhatsApp" aria-label="WhatsApp">
-  <svg viewBox="0 0 24 24" fill="#25d366" xmlns="http://www.w3.org/2000/svg"><path d="M12.04 2c-5.5 0-9.96 4.46-9.96 9.96 0 1.76.46 3.48 1.34 5L2 22l5.2-1.36a9.94 9.94 0 0 0 4.84 1.24h.01c5.5 0 9.96-4.46 9.96-9.96S17.54 2 12.04 2Zm5.8 14.24c-.24.68-1.4 1.32-1.94 1.36-.5.05-1.05.24-3.5-.76-2.96-1.2-4.86-4.18-5.01-4.38-.15-.2-1.2-1.6-1.2-3.05s.75-2.17 1.02-2.46c.26-.29.57-.36.76-.36h.55c.18 0 .42-.03.64.5.24.58.8 2.01.87 2.16.07.15.11.32.02.51-.09.19-.14.31-.28.48-.14.17-.29.37-.42.5-.14.14-.28.29-.13.57.15.29.68 1.14 1.47 1.86 1.02.92 1.87 1.21 2.16 1.35.29.14.46.12.63-.07.17-.19.71-.83.9-1.11.19-.29.37-.24.63-.14.26.1 1.66.79 1.94.93.28.14.47.21.53.33.07.13.07.72-.17 1.4Z"/></svg>
-</a>
+<script>
+const SERVICIOS=[{n:'Corte',d:30,p:150},{n:'Barba',d:20,p:100},{n:'Corte + Barba',d:50,p:230},{n:'Diseño',d:15,p:80},{n:'Paquete Premium',d:75,p:380},{n:'Ondulado',d:90,p:450}];
+const BARBEROS=['Kevin','Toño','Bryan'];
+const DIAS=['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
+const MESES=['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
+let sel={srv:null,fecha:null,slot:null,barb:null,pref:'cualquiera'}, paso=1;
 
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-app.js";
-import { getFirestore, collection, addDoc, onSnapshot, query, where, orderBy, getDocs, doc, serverTimestamp } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-firestore.js";
-import { getAuth, initializeAuth, inMemoryPersistence, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-auth.js";
-import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/11.0.0/firebase-functions.js";
+document.getElementById('steps').innerHTML=[1,2,3,4,5].map((n,i)=>
+  `${i>0?`<div class="trak" id="tk${i}"><div class="trak-fill" id="tkf${i}"></div></div>`:''}<div class="dot${i===0?' active':''}" id="dt${n}"></div>`
+).join('');
 
-// ##############################################################
-// #                                                            #
-// #   CONFIGURA AQUÍ POR CLIENTE  —  (lo único que se cambia)  #
-// #                                                            #
-// #   Al crear una agenda nueva, edita SOLO este bloque:       #
-// #   1) Pega la config de Firebase del proyecto del cliente   #
-// #   (El nombre del negocio se edita a mano en los títulos)   #
-// #                                                            #
-// ##############################################################
-const CONFIG = {
-  // ---- Config de Firebase (cópiala de la consola de Firebase) ----
-  firebase: {
-    apiKey: "AIzaSyDK4jYc1XgHEkN6d-WvcSUyR4nhFWEgN74",
-    authDomain: "demo1-37837.firebaseapp.com",
-    projectId: "demo1-37837",
-    appId: "1:71418270260:web:2cc80e1070355684aff061"
-  }
-};
-// ##############################################################
-// #   FIN DE LA CONFIGURACIÓN — no edites nada abajo de aquí   #
-// ##############################################################
-
-const firebaseConfig = CONFIG.firebase;
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-// IMPORTANTE: reservar.html y agenda.html corren en el MISMO dominio y
-// comparten el mismo Firebase. Si reservar usara el Auth normal (persistente),
-// su sesión anónima SOBRESCRIBIRÍA la sesión maestra de la agenda en el mismo
-// navegador — la recepción tendría que volver a loguearse cada vez que un
-// cliente reserva. Para evitarlo, aquí creamos una instancia de Auth AISLADA
-// con persistencia SOLO en memoria: vive mientras la pestaña de reservar está
-// abierta y no toca el almacenamiento que usa la agenda.
-let auth;
-try {
-  auth = initializeAuth(app, { persistence: inMemoryPersistence });
-} catch (e) {
-  // Si ya se inicializó (recarga en caliente), cae al getAuth normal
-  auth = getAuth(app);
-}
-
-// Cloud Function de disponibilidad. La región DEBE coincidir con la del
-// despliegue (us-central1), aunque la base de datos esté en México.
-const functions = getFunctions(app, "us-central1");
-const fnDisponibilidad = httpsCallable(functions, "disponibilidad");
-const fnBarberosPublicos = httpsCallable(functions, "barberosPublicos");
-
-// ================== LOGIN ANÓNIMO (público, sin fricción) ==================
-// El cliente NO se registra ni ve nada. Firebase le da una identidad temporal
-// para que las reglas de seguridad permitan CREAR su cita. Sin esto, con las
-// reglas activas, reservar.html no podría guardar nada.
-let _resolveAuth;
-const authListo = new Promise(res => { _resolveAuth = res; });
-
-onAuthStateChanged(auth, user => {
-  if (user) { _resolveAuth(true); }
-});
-
-async function iniciarSesionAnonima(){
-  if (auth.currentUser) return;
-  try {
-    await signInAnonymously(auth);
-  } catch (e) {
-    console.error("Fallo el login anónimo:", e.code, e.message);
-  }
-}
-iniciarSesionAnonima();
-// ===========================================================================
-
-const DIAS_N = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
-const DIAS_CORTO = ['Dom','Lun','Mar','Mié','Jue','Vie','Sáb'];
-const MESES = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
-const MESES_CORTO = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic'];
-
-function duracionLabel(min){
-  if (!min) return '';
-  if (min < 60) return min + ' min';
-  const h = Math.floor(min / 60), m = min % 60;
-  return m === 0 ? h + ' h' : h + ' h ' + m + ' min';
-}
-
-function slot12hr(s){ const [h,m]=s.split(':').map(Number); const ap=h>=12?'PM':'AM'; const h12=h%12||12; return `${h12}:${String(m).padStart(2,'0')} ${ap}`; }
-// Texto del barbero para MOSTRAR al cliente. Si eligió "Cualquiera",
-// no revelamos a quién le tocó: se muestra genérico. Si pidió a alguien
-// por nombre, se muestra ese nombre. (La cita SIEMPRE se guarda con el
-// barbero real, esto es solo lo visible.)
-function barberoLabel(){
-  return prefBarbero === 'cualquiera' ? 'Primer barbero disponible' : selBarbero;
-}
-function getDateKey(d){ return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
-
-let toastTimer = null;
-function showToast(msg){
-  const t = document.getElementById('toast');
-  clearTimeout(toastTimer);
-  t.classList.remove('hide');
-  t.textContent = msg;
-  t.classList.add('show');
-  toastTimer = setTimeout(() => {
-    t.classList.add('hide');
-    setTimeout(() => { t.classList.remove('show','hide'); }, 260);
-  }, 2500);
-}
-
-let BARBEROS = [];
-let SERVICIOS = [];
-let unsubServicios = null;
-
-let selServicio=null, selFecha=null, selSlot=null, selBarbero=null;
-let prefBarbero = 'cualquiera';
-let barberoExpandido = false;
-let pasoActual = 1;
-
-async function cargarBarberos(){
-  try {
-    await authListo; // identidad anónima antes de llamar
-    const res = await fnBarberosPublicos();
-    BARBEROS = (res.data && res.data.barberos) ? res.data.barberos : [];
-  } catch (e) {
-    console.error('Error al cargar barberos:', e);
-    BARBEROS = [];
-  }
-  renderServiciosGrid();
-  renderFechas();
-  if (pasoActual === 3) { renderBarberoChips(); cargarHorarios(); }
-}
-
-function escucharServicios(){
-  if (unsubServicios) unsubServicios();
-  unsubServicios = onSnapshot(query(collection(db,'servicios'), orderBy('orden')), snap => {
-    SERVICIOS = snap.docs.map(d => ({ id:d.id, ...d.data() })).filter(s => s.activo !== false);
-    renderServiciosGrid();
+function renderServicios(){
+  document.getElementById('servicios').innerHTML=SERVICIOS.map((s,i)=>`
+    <div class="card" data-i="${i}"><div class="card-row"><div><div class="card-nombre">${s.n}</div><div class="card-meta">${s.d} min · $${s.p}</div></div><div class="card-dot"></div></div></div>`).join('');
+  document.querySelectorAll('#servicios .card').forEach(c=>c.onclick=()=>{
+    document.querySelectorAll('#servicios .card').forEach(x=>x.classList.remove('sel'));
+    c.classList.add('sel'); sel.srv=SERVICIOS[+c.dataset.i]; setNext(true);
   });
 }
-
-// Mismo orden que en la Agenda interna: primer servicio, paquetes, resto de servicios, Ondulado al final
-function ordenarServicios(lista){
-  const paquetes = lista.filter(s => s.esPaquete).sort((a,b) => (a.orden||0)-(b.orden||0));
-  const individuales = lista.filter(s => !s.esPaquete && s.nombre!=='Ondulado').sort((a,b) => (a.orden||0)-(b.orden||0));
-  const ondulado = lista.filter(s => s.nombre==='Ondulado');
-  if (individuales.length <= 1) return [...individuales, ...paquetes, ...ondulado];
-  return [individuales[0], ...paquetes, ...individuales.slice(1), ...ondulado];
-}
-
-// ---- PASO 1: Servicios ----
-function renderServiciosGrid(){
-  const grid = document.getElementById('servicios-grid');
-  if (!SERVICIOS.length) { grid.innerHTML = '<div class="skel-grid"><div class="skel-card"></div><div class="skel-card"></div><div class="skel-card"></div><div class="skel-card"></div></div>'; return; }
-  const ordenados = ordenarServicios(SERVICIOS);
-  grid.innerHTML = '';
-  let sepPuesto = false;
-  const primerPaqueteIdx = ordenados.findIndex(s => s.esPaquete);
-  ordenados.forEach((s, i) => {
-    if (i === primerPaqueteIdx && !sepPuesto && primerPaqueteIdx !== -1) {
-      const sep = document.createElement('div'); sep.className='sep-label'; sep.textContent='Paquetes'; grid.appendChild(sep);
-      sepPuesto = true;
-    }
-    const descId = `desc-${s.id}`;
-    const tieneDesc = !!(s.descripcion && s.descripcion.trim());
-    const card = document.createElement('div'); card.className='srv-card';
-    card.innerHTML = `
-      ${tieneDesc ? `<button type="button" class="info-btn" onclick="event.stopPropagation(); toggleInfo('${descId}')" title="Ver qué incluye">ⓘ</button>` : ''}
-      <div class="srv-nombre">${s.nombre}</div>
-      <div class="srv-duracion">${duracionLabel(s.durMin)}${s.precio?' · $'+s.precio:''}</div>
-      ${tieneDesc ? `<div class="srv-desc" id="${descId}">${s.descripcion}</div>` : ''}
-    `;
-    card.onclick = () => {
-      document.querySelectorAll('.srv-card').forEach(c => c.classList.remove('selected'));
-      card.classList.add('selected');
-      selServicio = s;
-      // Si el servicio lo hace UN SOLO barbero (ej. los exclusivos de
-      // Joss), no lo dejamos oculto tras "Cualquiera": se muestra
-      // directo que la cita es con él.
-      if (s.barberosPermitidos && s.barberosPermitidos.length === 1) {
-        prefBarbero = s.barberosPermitidos[0];
-        barberoExpandido = true;
-      } else {
-        prefBarbero = 'cualquiera';
-        barberoExpandido = false;
-      }
-      selSlot = null;
-      document.getElementById('btn-1').disabled = false;
-    };
-    grid.appendChild(card);
-  });
-}
-
-// ---- PASO 2: Fechas ----
 function renderFechas(){
-  const fechasRow = document.getElementById('fechas-row');
-  fechasRow.innerHTML = '';
-  for (let i=0; i<14; i++){
-    const d = new Date(); d.setDate(d.getDate()+i); d.setHours(0,0,0,0);
-    const diaSem = d.getDay();
-    const hayBarbero = diaSem !== 0; // The Barber One: cerrado solo domingo
-    const card = document.createElement('div'); card.className = 'fecha-card' + (hayBarbero ? '' : ' ocupado');
-    card.style.setProperty('--i', i);
-    card.innerHTML = `<div class="fecha-dia-num">${d.getDate()}</div><div class="fecha-dia-nom">${DIAS_CORTO[diaSem]}</div><div class="fecha-mes">${MESES_CORTO[d.getMonth()]}</div>`;
-    if (hayBarbero) {
-      card.onclick = () => {
-        document.querySelectorAll('.fecha-card').forEach(c => c.classList.remove('selected'));
-        card.classList.add('selected');
-        selFecha = new Date(d); selSlot = null;
-        document.getElementById('btn-2').disabled = false;
-      };
-    } else {
-      card.style.opacity = '0.35'; card.style.cursor = 'not-allowed';
-    }
-    fechasRow.appendChild(card);
+  const row=document.getElementById('fechas'); row.innerHTML='';
+  for(let i=0;i<14;i++){ const d=new Date(); d.setDate(d.getDate()+i);
+    const el=document.createElement('div'); el.className='fecha';
+    el.innerHTML=`<div class="f-num">${d.getDate()}</div><div class="f-dow">${DIAS[d.getDay()]}</div><div class="f-mes">${MESES[d.getMonth()]}</div>`;
+    el.onclick=()=>{ document.querySelectorAll('.fecha').forEach(x=>x.classList.remove('sel')); el.classList.add('sel'); sel.fecha=d; setNext(true); };
+    row.appendChild(el);
   }
 }
-
-window.toggleInfo = function(id){
-  const el = document.getElementById(id);
-  document.querySelectorAll('.srv-desc.open').forEach(d => { if (d.id !== id) d.classList.remove('open'); });
-  el.classList.toggle('open');
-};
-
-// ---- PASO 3: Barbero + Horarios ----
-window.mostrarBarberos = function(){
-  barberoExpandido = true;
-  renderBarberoChips();
-};
-
-function renderBarberoChips(){
-  const cont = document.getElementById('barbero-chips');
-  const toggle = document.getElementById('barbero-toggle');
-  if (!selServicio) { cont.innerHTML=''; return; }
-
-  // Servicio exclusivo de UN solo barbero: no hay nada que elegir.
-  // Escondemos el toggle y los chips (incluido "Cualquiera") y solo
-  // avisamos con quién es la cita.
-  const exclusivo = selServicio.barberosPermitidos && selServicio.barberosPermitidos.length === 1;
-  if (exclusivo) {
-    toggle.style.display = 'none';
-    cont.style.display = 'flex';
-    cont.innerHTML = `<div class="tbo-chip tbo-chip--activo" style="cursor:default;">Este servicio es con ${selServicio.barberosPermitidos[0]}</div>`;
-    return;
-  }
-
-  const candidatos = BARBEROS.filter(b => !selServicio.barberosPermitidos || selServicio.barberosPermitidos.length===0 || selServicio.barberosPermitidos.includes(b.nombre));
-  const expandir = barberoExpandido || prefBarbero!=='cualquiera';
-
-  if (!expandir) {
-    toggle.style.display = 'block';
-    toggle.innerHTML = '¿Tienes un barbero de preferencia? <span class="toggle-link">Elegir</span>';
-    cont.style.display = 'none';
-    cont.innerHTML = '';
-    return;
-  }
-
-  toggle.style.display = 'none';
-  cont.style.display = 'flex';
-  let html = `<div class="tbo-chip${prefBarbero==='cualquiera'?' tbo-chip--activo':''}" onclick="elegirBarbero('cualquiera')">Cualquiera</div>`;
-  candidatos.forEach(b => {
-    html += `<div class="tbo-chip${prefBarbero===b.nombre?' tbo-chip--activo':''}" onclick="elegirBarbero('${b.nombre}')">${b.nombre}</div>`;
+function renderAvatares(){
+  const cont=document.getElementById('avatares');
+  cont.innerHTML=`<div class="av sel" data-n="cualquiera"><div class="av-c">✦</div><div class="av-n">Cualquiera</div></div>` +
+    BARBEROS.map(b=>`<div class="av" data-n="${b}"><div class="av-c">${b[0]}</div><div class="av-n">${b}</div></div>`).join('');
+  cont.querySelectorAll('.av').forEach(a=>a.onclick=()=>{
+    cont.querySelectorAll('.av').forEach(x=>x.classList.remove('sel')); a.classList.add('sel');
+    sel.pref=a.dataset.n; renderHoras();
   });
-  cont.innerHTML = html;
 }
-
-window.elegirBarbero = function(nombre){
-  prefBarbero = nombre;
-  selSlot = null;
-  document.getElementById('btn-3').disabled = true;
-  renderBarberoChips();
-  cargarHorarios();
-};
-
-async function cargarHorarios(){
-  if (!selFecha || !selServicio) return;
-  const cont = document.getElementById('horarios-contenido');
-  cont.innerHTML = '<div class="loading">Verificando disponibilidad</div>';
-  document.getElementById('btn-3').disabled = true;
-
-  const key = getDateKey(selFecha);
-
-  // Pedimos los huecos al servidor. La función lee barberos/citas/overrides
-  // del lado servidor y devuelve SOLO los horarios libres: nada de nómina
-  // ni de teléfonos de otros clientes llega al navegador.
-  let slotsDisp = [];
-  try {
-    await authListo; // asegura identidad anónima antes de llamar
-    const res = await fnDisponibilidad({
-      fecha: key,
-      durMin: selServicio.durMin,
-      barberosPermitidos: selServicio.barberosPermitidos || [],
-      prefBarbero: prefBarbero
-    });
-    slotsDisp = (res.data && res.data.slots) ? res.data.slots : [];
-  } catch (e) {
-    console.error('Error al consultar disponibilidad:', e);
-    cont.innerHTML = '<div class="no-disponible">No se pudo cargar la disponibilidad. Intenta de nuevo.</div>';
-    return;
-  }
-
-  if (!slotsDisp.length) {
-    const quien = prefBarbero==='cualquiera' ? '' : ` con ${prefBarbero}`;
-    cont.innerHTML = `<div class="no-disponible">😔 No hay horarios disponibles${quien} para este día.<br>Intenta con otra fecha${prefBarbero!=='cualquiera'?' o elige "Cualquiera"':''}.</div>`;
-    return;
-  }
-
-  document.getElementById('horarios-sub').textContent = `${slotsDisp.length} horarios disponibles`;
-  const hgrid = document.createElement('div'); hgrid.className = 'horarios-grid';
-  slotsDisp.forEach(({slot, barbero}) => {
-    const card = document.createElement('div'); card.className = 'hora-card';
-    card.textContent = slot12hr(slot);
-    card.onclick = () => {
-      document.querySelectorAll('.hora-card').forEach(c => c.classList.remove('selected'));
-      card.classList.add('selected');
-      selSlot = slot;
-      selBarbero = barbero;
-      document.getElementById('btn-3').disabled = false;
-    };
-    hgrid.appendChild(card);
+function renderHoras(){
+  const horas=[]; for(let h=10;h<19;h++){ horas.push(h+':00'); if(Math.random()>.3) horas.push(h+':30'); }
+  document.getElementById('hsub').textContent=horas.length+' horarios disponibles';
+  document.getElementById('horas').innerHTML=horas.map(h=>`<div class="hora" data-h="${h}">${h}</div>`).join('');
+  document.querySelectorAll('.hora').forEach(h=>h.onclick=()=>{
+    document.querySelectorAll('.hora').forEach(x=>x.classList.remove('sel')); h.classList.add('sel');
+    sel.slot=h.dataset.h; sel.barb=sel.pref==='cualquiera'?BARBEROS[0]:sel.pref; setNext(true);
   });
-  cont.innerHTML = '';
-  cont.appendChild(hgrid);
 }
-
-// Transición animada entre pasos: desliza y desvanece la sección saliente
-// antes de mostrar la entrante, en la dirección correcta (avanzar / regresar).
-// Puramente visual — no toca el orden ni el resultado de las validaciones
-// y renders que ya hacía irPaso().
-function animarSeccion(paso){
-  const avanza = paso > pasoActual;
-  const actual = document.getElementById('sec-' + pasoActual);
-  const siguiente = document.getElementById('sec-' + paso);
-
-  if (actual && actual !== siguiente && actual.classList.contains('active')) {
-    actual.style.animation = (avanza ? 'slideOutFwd' : 'slideOutBack') + ' .16s ease forwards';
-    window.setTimeout(() => {
-      actual.classList.remove('active');
-      actual.style.animation = '';
-      siguiente.classList.add('active');
-      siguiente.style.animation = (avanza ? 'slideInFwd' : 'slideInBack') + ' .26s ease';
-      window.setTimeout(() => { siguiente.style.animation = ''; }, 280);
-    }, 170);
-  } else {
-    siguiente.classList.add('active');
-  }
-}
-
-window.irPaso = function(paso){
-  if (paso===5) {
-    const nombre = document.getElementById('d-nombre').value.trim();
-    const tel = document.getElementById('d-telefono').value.trim();
-    if (!nombre) { showToast('Ingresa tu nombre'); return; }
-    if (!tel || tel.length<10) { showToast('Ingresa tu número de WhatsApp'); return; }
-    renderResumen();
-  }
-  if (paso===3) { renderBarberoChips(); cargarHorarios(); }
-
-  animarSeccion(paso);
-  for (let i=1; i<=5; i++) {
-    const stepEl = document.getElementById('step-'+i);
-    stepEl.className = 'step' + (i===paso ? ' active' : i<paso ? ' done' : '');
-  }
-  pasoActual = paso;
-};
+document.getElementById('btoggle').onclick=()=>{ document.getElementById('btoggle').style.display='none'; document.getElementById('avatares').style.display='flex'; };
 
 function renderResumen(){
-  const nombre = document.getElementById('d-nombre').value.trim();
-  const tel = document.getElementById('d-telefono').value.trim();
-  const com = document.getElementById('d-comentario').value.trim();
-  const d = selFecha;
-  document.getElementById('resumen-card').innerHTML = `
-    <div class="tbo-tarjeta__cuerpo">
-    <div class="res-row"><span class="res-lbl">Servicio</span><span class="res-val">${selServicio.nombre}</span></div>
-    <div class="res-row"><span class="res-lbl">Duración</span><span class="res-val cifra">${duracionLabel(selServicio.durMin)}</span></div>
-    <div class="res-row"><span class="res-lbl">Fecha</span><span class="res-val">${DIAS_N[d.getDay()]} ${d.getDate()} de ${MESES[d.getMonth()]}</span></div>
-    <div class="res-row"><span class="res-lbl">Horario</span><span class="res-val cifra">${slot12hr(selSlot)}</span></div>
-    <div class="res-row"><span class="res-lbl">Barbero</span><span class="res-val">${barberoLabel()}</span></div>
-    <div class="res-row"><span class="res-lbl">Nombre</span><span class="res-val">${nombre}</span></div>
-    ${tel?`<div class="res-row"><span class="res-lbl">Teléfono</span><span class="res-val cifra">${tel}</span></div>`:''}
-    ${com?`<div class="res-row"><span class="res-lbl">Comentario</span><span class="res-val">${com}</span></div>`:''}
-    </div>
-  `;
+  const d=sel.fecha;
+  document.getElementById('resumen').innerHTML=`
+    <div class="r-row"><span class="r-l">Servicio</span><span class="r-v">${sel.srv.n}</span></div>
+    <div class="r-row"><span class="r-l">Fecha</span><span class="r-v">${d.getDate()} de ${['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'][d.getMonth()]}</span></div>
+    <div class="r-row"><span class="r-l">Horario</span><span class="r-v">${sel.slot}</span></div>
+    <div class="r-row"><span class="r-l">Barbero</span><span class="r-v">${sel.pref==='cualquiera'?'Primer disponible':sel.barb}</span></div>
+    <div class="r-row"><span class="r-l">Nombre</span><span class="r-v">${document.getElementById('d-nombre').value||'—'}</span></div>`;
 }
 
-// Ráfaga de confeti puramente decorativa para celebrar la cita confirmada.
-// No depende de ningún dato de la reserva; se puede quitar sin afectar nada.
-function lanzarConfeti(){
-  const layer = document.getElementById('confetti-layer');
-  if (!layer) return;
-  layer.innerHTML = '';
-  const colores = ['#E0A14A', '#F0C078', '#F5F5F3'];
-  const total = 22;
-  for (let i=0; i<total; i++){
-    const p = document.createElement('div');
-    p.className = 'confetti-piece';
-    const left = Math.random()*100;
-    const dur = 1.4 + Math.random()*1.1;
-    const delay = Math.random()*.4;
-    const color = colores[i % colores.length];
-    const rot = Math.random()*360;
-    p.style.left = left + '%';
-    p.style.background = color;
-    p.style.animationDuration = dur + 's';
-    p.style.animationDelay = delay + 's';
-    p.style.transform = `rotate(${rot}deg)`;
-    layer.appendChild(p);
+function setNext(on){ document.getElementById('next').disabled=!on; }
+function irPaso(p){
+  paso=p;
+  for(let i=1;i<=5;i++){
+    document.getElementById('sec-'+i).classList.toggle('active',i===p);
+    const dot=document.getElementById('dt'+i); dot.className='dot'+(i===p?' active':i<p?' done':'');
+    if(i<5){ const fillOn = i<p; document.getElementById('tkf'+i).style.width = fillOn?'100%':'0%'; }
   }
-  window.setTimeout(() => { layer.innerHTML = ''; }, 3200);
+  document.getElementById('back').style.display=p>1?'flex':'none';
+  document.getElementById('next').textContent=p===5?'Reservar cita':'Continuar';
+  if(p===1) setNext(!!sel.srv); else if(p===2) setNext(!!sel.fecha); else if(p===3) setNext(!!sel.slot); else setNext(true);
+  if(p===5) renderResumen();
 }
-
-window.enviarSolicitud = async function(){
-  const nombre = document.getElementById('d-nombre').value.trim();
-  const tel = document.getElementById('d-telefono').value.trim();
-  const com = document.getElementById('d-comentario').value.trim();
-  const d = selFecha;
-
-  try {
-    // Si la identidad anónima nunca resuelve (ej. "Anonymous" deshabilitado
-    // en Firebase Auth), esto evita que se quede colgado sin avisar nada.
-    await Promise.race([
-      authListo,
-      new Promise((_, rej) => setTimeout(() => rej({code:'auth-timeout', message:'La identidad anónima nunca respondió'}), 6000))
-    ]);
-    // Agenda DIRECTO como cita confirmada (sin aprobación manual)
-    // Normalizamos al shape EXACTO que exige la regla citaValida():
-    //  - barbero SIEMPRE string
-    //  - slot como HH:MM con dos dígitos en hora Y minuto (regex ^\d{2}:\d{2}$)
-    //  - durMin como número, comentario como string (nunca undefined)
-    function normSlot(s){
-      const m = String(s).match(/(\d{1,2}):(\d{1,2})/);
-      if (!m) return String(s);
-      return String(m[1]).padStart(2,'0') + ':' + String(m[2]).padStart(2,'0');
-    }
-    const slotNorm = normSlot(selSlot);
-    const barberoNorm = String(selBarbero || '');
-    const durNorm = Number(selServicio.durMin);
-    const comNorm = String(com || '');
-    const nombreNorm = String(nombre || '');
-    const telNorm = String(tel || '');
-    // "fijo": el cliente pidió a ESTE barbero por nombre (no "cualquiera").
-    // Recepción no debe reasignar la cita a otro barbero.
-    const esFijo = (prefBarbero !== 'cualquiera');
-    await addDoc(collection(db,'citas'), {
-      nombre: nombreNorm, telefono: telNorm, comentario: comNorm,
-      servicio: selServicio.nombre, durMin: durNorm,
-      fecha: getDateKey(d), slot: slotNorm,
-      barbero: barberoNorm, tipo: 'normal', confirmado: true,
-      origen: 'reserva-web', fijo: esFijo, ts: Date.now()
-    });
-
-    document.getElementById('conf-resumen').innerHTML = `
-      <div class="res-row"><span class="res-lbl">Servicio</span><span class="res-val">${selServicio.nombre}</span></div>
-      <div class="res-row"><span class="res-lbl">Fecha</span><span class="res-val">${DIAS_N[d.getDay()]} ${d.getDate()} de ${MESES[d.getMonth()]}</span></div>
-      <div class="res-row"><span class="res-lbl">Horario reservado</span><span class="res-val cifra">${slot12hr(selSlot)}</span></div>
-      <div class="res-row"><span class="res-lbl">Barbero</span><span class="res-val">${barberoLabel()}</span></div>
-      <div class="res-row"><span class="res-lbl">Nombre</span><span class="res-val">${nombre}</span></div>
-    `;
-
-    for (let i=1; i<=5; i++) document.getElementById('sec-'+i).className = 'section';
-    document.getElementById('confirmacion').style.display = 'flex';
-    document.querySelector('.steps').style.display = 'none';
-    lanzarConfeti();
-
-  } catch(e) {
-    console.error('Error al reservar:', e.code || '(sin código)', e.message || e);
-    showToast('Error al enviar (' + (e.code || 'ver consola') + '). Intenta de nuevo.');
+document.getElementById('back').onclick=()=>irPaso(paso-1);
+document.getElementById('next').onclick=()=>{
+  if(paso<5) irPaso(paso+1);
+  else{
+    document.getElementById('tbody').innerHTML=document.getElementById('resumen').innerHTML;
+    document.querySelector('.header').style.display='none'; document.getElementById('steps').style.display='none';
+    document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+    document.getElementById('actions').style.display='none';
+    document.getElementById('confirm').classList.add('show');
   }
 };
 
-window.reiniciar = function(){
-  selServicio=null; selFecha=null; selSlot=null; selBarbero=null; prefBarbero='cualquiera'; barberoExpandido=false;
-  document.querySelectorAll('.srv-card').forEach(c => c.classList.remove('selected'));
-  document.querySelectorAll('.fecha-card').forEach(c => c.classList.remove('selected'));
-  document.getElementById('d-nombre').value = '';
-  document.getElementById('d-telefono').value = '';
-  document.getElementById('d-comentario').value = '';
-  document.getElementById('btn-1').disabled = true;
-  document.getElementById('btn-2').disabled = true;
-  document.getElementById('confirmacion').style.display = 'none';
-  document.querySelector('.steps').style.display = 'flex';
-  pasoActual = 5;
-  irPaso(1);
-};
-
-cargarBarberos();
-escucharServicios();
+renderServicios(); renderFechas(); renderAvatares(); renderHoras();
 </script>
 </body>
 </html>
