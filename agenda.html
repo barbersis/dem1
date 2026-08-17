@@ -391,6 +391,11 @@ textarea.tbo-campo{ min-height:80px; padding: var(--tbo-e2) var(--tbo-e3); line-
       border-left-color:#7c3aed;
       box-shadow: 0 0 0 2px #7c3aed inset, var(--shadow-sm);
     }
+    .cita.bloqueo {
+      background: repeating-linear-gradient(45deg, var(--bloqueo-bg) 0, var(--bloqueo-bg) 8px, #dde3ea 8px, #dde3ea 16px);
+      border-left-color: var(--bloqueo); color: var(--bloqueo);
+    }
+    .cita.bloqueo .cita-nombre { color:#475569; }
     .cita-candado {
       position:absolute; top:4px; right:20px; font-size:10px;
     }
@@ -441,22 +446,38 @@ textarea.tbo-campo{ min-height:80px; padding: var(--tbo-e2) var(--tbo-e3); line-
 
     /* Modal de cita (agendar / editar) */
     #citaModal { position:fixed; inset:0; background:#0007; z-index:9990; display:none; align-items:center; justify-content:center; padding:16px; }
-    #citaModal .box { background:#fff; border-radius:16px; padding:24px; max-width:380px; width:100%; box-shadow:var(--shadow-lg); max-height:90vh; overflow-y:auto; }
+    #citaModal .box { background:#fff; border-radius:18px; padding:0; max-width:440px; width:100%; box-shadow:var(--shadow-lg); max-height:92vh; overflow:hidden; display:flex; flex-direction:column; animation: tboAparece .22s ease both; }
+    /* Cabecera con acento de marca (el brillo ámbar del plafón) */
+    .cita-modal-head { display:flex; align-items:flex-start; justify-content:space-between; padding:20px 22px 16px; background:var(--tbo-tinta,#0E0E10); color:#F5F5F3; box-shadow:var(--tbo-cove); }
+    .cita-modal-head h3 { margin:0; font-family:var(--tbo-display,sans-serif); font-weight:300; text-transform:uppercase; letter-spacing:.14em; font-size:18px; color:#F5F5F3; }
+    .cita-modal-head .modal-sub { font-size:12px; color:#A0A5AD; margin-top:5px; }
+    .cita-modal-x { background:transparent; border:0; color:#9AA0AA; font-size:26px; line-height:1; cursor:pointer; padding:0 4px; }
+    .cita-modal-x:hover { color:#fff; }
+    /* Pestañas Cita / Bloqueo */
+    .cita-tabs { display:flex; gap:2px; padding:0 22px; background:var(--tbo-tinta,#0E0E10); }
+    .cita-tab { flex:1; padding:11px 8px; background:transparent; border:0; border-bottom:2px solid transparent; color:#9AA0AA; font-size:13px; font-weight:600; cursor:pointer; }
+    .cita-tab:hover { color:#D7DAE0; }
+    .cita-tab.active { color:var(--tbo-ambar,#E0A14A); border-bottom-color:var(--tbo-ambar,#E0A14A); }
+    .cita-modal-body { padding:20px 22px 6px; overflow-y:auto; }
     #citaModal h3 { margin:0 0 4px; font-size:17px; }
-    #citaModal .modal-sub { font-size:12.5px; color:var(--text-faint); margin-bottom:16px; }
-    #citaModal label { display:block; font-size:12px; font-weight:700; color:var(--text-muted); margin:12px 0 4px; }
+    #citaModal .modal-sub { font-size:12.5px; color:var(--text-faint); }
+    #citaModal label { display:block; font-size:11.5px; font-weight:700; color:var(--text-muted); margin:14px 0 5px; text-transform:uppercase; letter-spacing:.04em; }
+    #citaModal label .op { font-weight:400; color:#aaa; text-transform:none; letter-spacing:0; }
     #citaModal input, #citaModal select, #citaModal textarea {
-      width:100%; padding:10px; border:1px solid var(--border-strong); border-radius:9px; box-sizing:border-box; font-size:14px; font-family:var(--font);
+      width:100%; padding:11px 12px; border:1px solid var(--border); border-radius:10px; font-size:15px; box-sizing:border-box; background:var(--surface); color:var(--text);
     }
-    #citaModal .fila2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
-    #citaModal .msg { font-size:12.5px; min-height:18px; margin-top:10px; padding:8px 10px; border-radius:8px; }
+    #citaModal input:focus, #citaModal select:focus, #citaModal textarea:focus { outline:none; border-color:var(--tbo-ambar,#E0A14A); box-shadow:0 0 0 3px var(--tbo-ambar-tenue,rgba(224,161,74,.12)); }
+    #citaModal .fila2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+    #citaModal .msg { font-size:12.5px; min-height:18px; margin-top:12px; padding:8px 10px; border-radius:8px; }
+    #citaModal .msg:empty { display:none; }
     #citaModal .msg.error { background:#fde8e8; color:#c0392b; }
     #citaModal .msg.ok { background:#d9f5ec; color:#0d7d5e; }
-    #citaModal .acciones { display:flex; gap:8px; margin-top:18px; }
-    #citaModal .acciones button { flex:1; padding:11px; border:0; border-radius:9px; font-size:13.5px; font-weight:700; cursor:pointer; }
-    #citaModal .btn-guardar { background:var(--accent); color:#fff; }
+    #citaModal .acciones { display:flex; gap:8px; padding:16px 22px 20px; border-top:1px solid var(--border); }
+    #citaModal .acciones button { flex:1; padding:12px; border:0; border-radius:10px; font-size:14px; font-weight:700; cursor:pointer; }
+    #citaModal .btn-guardar { background:var(--tbo-tinta,#0E0E10); color:#fff; }
+    #citaModal .btn-guardar:hover { background:#000; }
     #citaModal .btn-cancelar { background:var(--surface-2); color:var(--text-muted); border:1px solid var(--border) !important; }
-    #citaModal .btn-eliminar { background:#fde8e8; color:#c0392b; flex:0 0 auto; padding:11px 16px; }
+    #citaModal .btn-eliminar { background:#fde8e8; color:#c0392b; flex:0 0 auto; padding:12px 16px; }
     #citaModal .origen-badge { display:inline-block; font-size:10.5px; font-weight:700; padding:2px 8px; border-radius:20px; margin-left:6px; vertical-align:middle; }
     #citaModal .origen-badge.web { background:#dbeafe; color:#2563eb; }
     #citaModal .origen-badge.recepcion { background:#d9f5ec; color:#0d7d5e; }
@@ -552,6 +573,23 @@ textarea.tbo-campo{ min-height:80px; padding: var(--tbo-e2) var(--tbo-e3); line-
       height:34px; padding:0 12px; border:1px solid #3A3E46; border-radius:9px;
       font-size:12px; font-weight:600; cursor:pointer;
     }
+    /* ---- Leyenda de colores ---- */
+    .leyenda-wrap { position:relative; }
+    .leyenda-btn {
+      height:34px; padding:0 12px; background:transparent; border:1px solid #3A3E46;
+      border-radius:9px; color:#D7DAE0; font-size:12px; font-weight:600; cursor:pointer;
+    }
+    .leyenda-btn:hover { background:#1F2125; color:#fff; }
+    .leyenda-pop {
+      display:none; position:absolute; top:42px; left:0; z-index:60;
+      background:var(--tbo-sup,#fff); color:var(--tbo-texto,#16181C);
+      border:1px solid var(--tbo-borde,#E2E5EA); border-radius:12px;
+      box-shadow:var(--shadow-lg); padding:12px 14px; width:280px;
+    }
+    .leyenda-pop.open { display:block; animation: tboAparece .18s ease both; }
+    .leyenda-item { display:flex; align-items:center; gap:8px; font-size:12.5px; padding:5px 0; color:var(--text); }
+    .leyenda-punto { width:14px; height:14px; border-radius:4px; flex:0 0 auto; }
+    .leyenda-punto.anillo { background:transparent; box-shadow:0 0 0 2px #7c3aed inset; }
 
     /* ---- Entrada al abrir la app (sesión viva o justo tras la clave) ---- */
     .tbo-app-entra .topbar { animation: tboAparece .5s ease both; }
@@ -607,6 +645,15 @@ textarea.tbo-campo{ min-height:80px; padding: var(--tbo-e2) var(--tbo-e3); line-
     </div>
     <div class="nav-fecha">
       <button class="hoy-btn" onclick="irHoy()">Hoy</button>
+      <div class="leyenda-wrap">
+        <button class="leyenda-btn" onclick="toggleLeyenda(event)" title="Qué significa cada color">Colores ▾</button>
+        <div class="leyenda-pop" id="leyenda-pop">
+          <div class="leyenda-item"><span class="leyenda-punto" style="background:var(--normal)"></span> Recepción — la anotó el mostrador</div>
+          <div class="leyenda-item"><span class="leyenda-punto" style="background:var(--web)"></span> Web — reservó el cliente en línea</div>
+          <div class="leyenda-item"><span class="leyenda-punto anillo"></span> 🔒 Fija — pidió a ese barbero, no reasignar</div>
+          <div class="leyenda-item"><span class="leyenda-punto" style="background:var(--bloqueo)"></span> Bloqueo — espacio no disponible</div>
+        </div>
+      </div>
       <button class="nav-btn" onclick="cambiarDia(-1)">‹</button>
       <div class="fecha-lbl">
         <div class="d1" id="fecha-d1">—</div>
@@ -678,42 +725,69 @@ textarea.tbo-campo{ min-height:80px; padding: var(--tbo-e2) var(--tbo-e3); line-
   <!-- Modal de cita: agendar nueva / editar existente (Capa 2) -->
   <div id="citaModal">
     <div class="box">
-      <h3 id="citaModalTitulo">Nueva cita</h3>
-      <div class="modal-sub" id="citaModalSub"></div>
-
-      <label>Cliente</label>
-      <input id="c-nombre" type="text" placeholder="Nombre del cliente" />
-
-      <label>Teléfono <span style="font-weight:400;color:#aaa;">(opcional)</span></label>
-      <input id="c-telefono" type="tel" placeholder="10 dígitos" inputmode="numeric" />
-
-      <label>Servicio</label>
-      <select id="c-servicio" onchange="onCambioServicioModal()"></select>
-
-      <div class="fila2">
-        <div>
-          <label>Barbero</label>
-          <select id="c-barbero"></select>
+      <div class="cita-modal-head">
+        <div class="cita-modal-head-txt">
+          <h3 id="citaModalTitulo">Nueva cita</h3>
+          <div class="modal-sub" id="citaModalSub"></div>
         </div>
-        <div>
-          <label>Hora</label>
-          <input id="c-hora" type="time" step="300" />
-        </div>
+        <button class="cita-modal-x" onclick="cerrarCitaModal()" title="Cerrar">×</button>
       </div>
 
-      <label>Nota <span style="font-weight:400;color:#aaa;">(opcional)</span></label>
-      <textarea id="c-comentario" rows="2" placeholder="Comentario interno"></textarea>
+      <div class="cita-tabs" id="cita-tabs">
+        <button class="cita-tab active" id="tab-cita" onclick="cambiarTabModal('cita')">Cita</button>
+        <button class="cita-tab" id="tab-bloqueo" onclick="cambiarTabModal('bloqueo')">Bloquear espacio</button>
+      </div>
 
-      <label class="c-fija-check">
-        <input type="checkbox" id="c-fija" />
-        <span>🔒 Solicitó a este barbero (no reasignar)</span>
-      </label>
+      <div class="cita-modal-body">
+        <!-- Campos solo de CITA -->
+        <div id="campos-cita">
+          <label>Cliente</label>
+          <input id="c-nombre" type="text" placeholder="Nombre del cliente" />
 
-      <div class="msg" id="citaModalMsg"></div>
+          <label>Teléfono <span class="op">(opcional)</span></label>
+          <input id="c-telefono" type="tel" placeholder="10 dígitos" inputmode="numeric" />
+
+          <label>Servicio</label>
+          <select id="c-servicio" onchange="onCambioServicioModal()"></select>
+        </div>
+
+        <div class="fila2">
+          <div>
+            <label>Barbero</label>
+            <select id="c-barbero"></select>
+          </div>
+          <div>
+            <label>Hora</label>
+            <input id="c-hora" type="time" step="300" />
+          </div>
+        </div>
+
+        <!-- Duración solo para BLOQUEO (la cita la toma del servicio) -->
+        <div id="campo-bloqueo-dur" style="display:none">
+          <label>Duración del bloqueo</label>
+          <select id="c-bloqueo-dur">
+            <option value="15">15 minutos</option>
+            <option value="30" selected>30 minutos</option>
+            <option value="60">1 hora</option>
+            <option value="120">2 horas</option>
+            <option value="240">Toda la jornada (4 h)</option>
+          </select>
+        </div>
+
+        <label id="lbl-nota">Nota <span class="op">(opcional)</span></label>
+        <textarea id="c-comentario" rows="2" placeholder="Comentario interno"></textarea>
+
+        <label class="c-fija-check" id="c-fija-wrap">
+          <input type="checkbox" id="c-fija" />
+          <span>🔒 Solicitó a este barbero <em>(no reasignar)</em></span>
+        </label>
+
+        <div class="msg" id="citaModalMsg"></div>
+      </div>
 
       <div class="acciones">
-        <button class="btn-cancelar" onclick="cerrarCitaModal()">Cancelar</button>
         <button class="btn-eliminar" id="c-btn-eliminar" onclick="eliminarCitaActual()" style="display:none">Eliminar</button>
+        <button class="btn-cancelar" onclick="cerrarCitaModal()">Cancelar</button>
         <button class="btn-guardar" onclick="guardarCita()">Guardar</button>
       </div>
     </div>
@@ -979,6 +1053,16 @@ textarea.tbo-campo{ min-height:80px; padding: var(--tbo-e2) var(--tbo-e3); line-
   window.abrirAvisos = function(){ document.getElementById('avisos-panel').classList.add('open'); document.getElementById('panel-backdrop').classList.add('open'); };
   window.cerrarAvisos = function(){ document.getElementById('avisos-panel').classList.remove('open'); document.getElementById('panel-backdrop').classList.remove('open'); };
 
+  // ---- Leyenda de colores (popover junto a Hoy) ----
+  window.toggleLeyenda = function(event){
+    event.stopPropagation();
+    document.getElementById('leyenda-pop').classList.toggle('open');
+  };
+  document.addEventListener('click', e => {
+    const pop = document.getElementById('leyenda-pop');
+    if (pop && pop.classList.contains('open') && !e.target.closest('.leyenda-wrap')) pop.classList.remove('open');
+  });
+
   // ---- Estado del día por barbero ----
   function esDomingo(){ return fechaActual.getDay() === 0; }
   function noTrabajaHoy(b){
@@ -1059,6 +1143,15 @@ textarea.tbo-campo{ min-height:80px; padding: var(--tbo-e2) var(--tbo-e3); line-
           const dur = durCita(cita);
           const top = (ini - APERTURA_MIN) * PX_POR_MIN;
           const alto = Math.max(dur * PX_POR_MIN - 2, 20);
+          // Bloqueo: no es una cita de cliente, es un espacio inhabilitado.
+          if (cita.tipo === 'bloqueo'){
+            c += `<div class="cita bloqueo" style="top:${top}px;height:${alto}px" onclick="event.stopPropagation();abrirEditarCita('${cita.id}')">
+              <span class="cita-tag">🚫</span>
+              <div class="cita-rango">${min12hr(ini)} – ${min12hr(ini+dur)}</div>
+              <div class="cita-nombre">${cita.nombre || 'Bloqueado'}</div>
+            </div>`;
+            return;
+          }
           const esWeb = cita.origen === 'reserva-web';
           const esFija = cita.fijo === true;
           const cls = (esWeb ? 'web' : 'normal') + (esFija ? ' fija' : '');
@@ -1210,19 +1303,43 @@ textarea.tbo-campo{ min-height:80px; padding: var(--tbo-e2) var(--tbo-e3); line-
 
   // ---- Abrir / cerrar modal ----
   let citaEditandoId = null;
+  let modoModal = 'cita'; // 'cita' | 'bloqueo'
+  window.cambiarTabModal = function(tab){
+    modoModal = tab;
+    const esBloqueo = tab === 'bloqueo';
+    document.getElementById('tab-cita').classList.toggle('active', !esBloqueo);
+    document.getElementById('tab-bloqueo').classList.toggle('active', esBloqueo);
+    // En bloqueo se ocultan los datos de cliente/servicio y se pide duración
+    document.getElementById('campos-cita').style.display = esBloqueo ? 'none' : 'block';
+    document.getElementById('campo-bloqueo-dur').style.display = esBloqueo ? 'block' : 'none';
+    document.getElementById('c-fija-wrap').style.display = esBloqueo ? 'none' : 'flex';
+    document.getElementById('lbl-nota').innerHTML = esBloqueo
+      ? 'Motivo <span class="op">(opcional)</span>'
+      : 'Nota <span class="op">(opcional)</span>';
+    document.getElementById('c-comentario').placeholder = esBloqueo ? 'Ej. comida, junta, mantenimiento' : 'Comentario interno';
+  };
+
   window.abrirCitaModal = function(modo, datos){
     citaEditandoId = (modo === 'editar') ? datos.id : null;
-    document.getElementById('citaModalTitulo').textContent = modo === 'editar' ? 'Editar cita' : 'Nueva cita';
+    const esBloqueoExistente = (modo === 'editar' && datos.tipo === 'bloqueo');
+    // Título según lo que se abre
+    const tituloBase = esBloqueoExistente ? 'Bloqueo' : (modo === 'editar' ? 'Editar cita' : 'Nueva cita');
+    document.getElementById('citaModalTitulo').textContent = tituloBase;
     const fechaTxt = `${DIAS_N[fechaActual.getDay()]} ${fechaActual.getDate()} de ${MESES[fechaActual.getMonth()]}`;
-    const badge = modo === 'editar'
+    const badge = (modo === 'editar' && !esBloqueoExistente)
       ? `<span class="origen-badge ${datos.origen==='reserva-web'?'web':'recepcion'}">${datos.origen==='reserva-web'?'🌐 Web':'🏠 Recepción'}</span>` : '';
     document.getElementById('citaModalSub').innerHTML = fechaTxt + badge;
+
+    // Las pestañas solo se muestran al CREAR; al editar, se fija el modo
+    document.getElementById('cita-tabs').style.display = (modo === 'editar') ? 'none' : 'flex';
+    cambiarTabModal(esBloqueoExistente ? 'bloqueo' : 'cita');
 
     document.getElementById('c-nombre').value = datos.nombre || '';
     document.getElementById('c-telefono').value = datos.telefono || '';
     document.getElementById('c-comentario').value = datos.comentario || '';
     document.getElementById('c-hora').value = datos.slot || '';
     document.getElementById('c-fija').checked = (datos.fijo === true);
+    if (datos.durMin) document.getElementById('c-bloqueo-dur').value = String(datos.durMin);
 
     poblarServicios(document.getElementById('c-servicio'), datos.servicio || '');
     poblarBarberos(document.getElementById('c-barbero'), datos.barbero || '', filtroDeOpcionServicio());
@@ -1230,29 +1347,70 @@ textarea.tbo-campo{ min-height:80px; padding: var(--tbo-e2) var(--tbo-e3); line-
     document.getElementById('c-btn-eliminar').style.display = modo === 'editar' ? 'block' : 'none';
     const msg = document.getElementById('citaModalMsg'); msg.className = 'msg'; msg.textContent = '';
     document.getElementById('citaModal').style.display = 'flex';
-    document.getElementById('c-nombre').focus();
+    if (!esBloqueoExistente) document.getElementById('c-nombre').focus();
   };
-  window.cerrarCitaModal = function(){ document.getElementById('citaModal').style.display = 'none'; citaEditandoId = null; };
+  window.cerrarCitaModal = function(){ document.getElementById('citaModal').style.display = 'none'; citaEditandoId = null; modoModal = 'cita'; };
 
   // ---- Guardar (crear o editar) con validación de empalme ----
   window.guardarCita = async function(){
     const msg = document.getElementById('citaModalMsg');
     msg.className = 'msg'; msg.textContent = '';
 
+    const comentario = document.getElementById('c-comentario').value.trim();
+    const barbero = document.getElementById('c-barbero').value;
+    const horaStr = document.getElementById('c-hora').value;
+
+    if (!barbero){ msg.className='msg error'; msg.textContent='Elige un barbero.'; return; }
+    if (!horaStr){ msg.className='msg error'; msg.textContent='Elige una hora.'; return; }
+
+    // ===== BLOQUEO: espacio no disponible (sin cliente ni servicio) =====
+    if (modoModal === 'bloqueo'){
+      const durMin = Number(document.getElementById('c-bloqueo-dur').value) || 30;
+      const iniMin = slotToMin(horaStr);
+      if (iniMin < APERTURA_MIN || iniMin > ULTIMO_INICIO_MIN){
+        msg.className='msg error';
+        msg.textContent = `La hora debe estar entre ${min12hr(APERTURA_MIN)} y ${min12hr(ULTIMO_INICIO_MIN)}.`;
+        return;
+      }
+      const conf = buscarEmpalme(barbero, iniMin, durMin, citaEditandoId);
+      if (conf){
+        const cIni = slotToMin(conf.slot);
+        msg.className='msg error';
+        msg.textContent = `Se empalma con ${conf.nombre||'otra reserva'} (${min12hr(cIni)}–${min12hr(cIni+durCita(conf))}).`;
+        return;
+      }
+      const datosBloq = {
+        nombre: comentario || 'Bloqueado', telefono:'', comentario,
+        servicio:'Bloqueo', durMin,
+        fecha: getDateKey(fechaActual), slot: horaStr,
+        barbero, tipo:'bloqueo', confirmado:true, fijo:false
+      };
+      try {
+        if (citaEditandoId){
+          await updateDoc(doc(db,'citas',citaEditandoId), datosBloq);
+          showToast('Bloqueo actualizado');
+        } else {
+          await addDoc(collection(db,'citas'), { ...datosBloq, origen:'recepcion', ts: Date.now() });
+          showToast('Espacio bloqueado');
+        }
+        window.cerrarCitaModal();
+      } catch(e){
+        console.error('Error al guardar bloqueo:', e);
+        msg.className='msg error'; msg.textContent = 'No se pudo guardar el bloqueo.';
+      }
+      return;
+    }
+
+    // ===== CITA normal =====
     const nombre = document.getElementById('c-nombre').value.trim();
     const telefono = document.getElementById('c-telefono').value.trim();
-    const comentario = document.getElementById('c-comentario').value.trim();
     const selServicio = document.getElementById('c-servicio');
     const servicioNombre = selServicio.value;
     const durMin = Number(selServicio.options[selServicio.selectedIndex]?.dataset.durmin) || 30;
-    const barbero = document.getElementById('c-barbero').value;
-    const horaStr = document.getElementById('c-hora').value;
     const esFija = document.getElementById('c-fija').checked;
 
     if (!nombre){ msg.className='msg error'; msg.textContent='Falta el nombre del cliente.'; return; }
     if (!servicioNombre){ msg.className='msg error'; msg.textContent='Elige un servicio.'; return; }
-    if (!barbero){ msg.className='msg error'; msg.textContent='Elige un barbero.'; return; }
-    if (!horaStr){ msg.className='msg error'; msg.textContent='Elige una hora.'; return; }
 
     const iniMin = slotToMin(horaStr);
     if (iniMin < APERTURA_MIN || iniMin > ULTIMO_INICIO_MIN){
