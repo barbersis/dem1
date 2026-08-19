@@ -696,6 +696,38 @@ window.enviarSolicitud = async function(){
     // "fijo": el cliente pidió a ESTE barbero por nombre (no "cualquiera").
     // Recepción no debe reasignar la cita a otro barbero.
     const esFijo = (prefBarbero !== 'cualquiera');
+
+    // ---- Revalidación de última hora (evita citas "fantasma") ----
+    // Entre que el cliente vio los horarios (paso 3) y llega aquí puede pasar
+    // rato (llenando nombre/teléfono en el paso 4). En ese lapso recepción
+    // pudo bloquear a este barbero (p.ej. "No trabaja hoy") u otro cliente
+    // pudo tomar el mismo horario. El addDoc de abajo escribe DIRECTO a
+    // Firestore desde el navegador — sin esto, se crearía la cita aunque el
+    // barbero ya no esté disponible. Volvemos a pedir los huecos frescos al
+    // servidor (misma función que ya valida barberos/citas/overrides) y solo
+    // dejamos pasar si el horario elegido SIGUE en la lista.
+    try {
+      const fresco = await fnDisponibilidad({
+        fecha: getDateKey(d),
+        durMin: selServicio.durMin,
+        barberosPermitidos: selServicio.barberosPermitidos || [],
+        prefBarbero: prefBarbero
+      });
+      const slotsFrescos = (fresco.data && fresco.data.slots) ? fresco.data.slots : [];
+      const sigueDisponible = slotsFrescos.some(s => normSlot(s.slot) === slotNorm && String(s.barbero) === barberoNorm);
+      if (!sigueDisponible) {
+        showToast('Ese horario ya no está disponible. Elige otro, por favor.');
+        selSlot = null; selBarbero = null;
+        document.getElementById('btn-3').disabled = true;
+        irPaso(3);
+        return;
+      }
+    } catch (e) {
+      console.error('No se pudo revalidar disponibilidad antes de reservar:', e);
+      showToast('No se pudo confirmar la disponibilidad. Intenta de nuevo.');
+      return;
+    }
+
     await addDoc(collection(db,'citas'), {
       nombre: nombreNorm, telefono: telNorm, comentario: comNorm,
       servicio: selServicio.nombre, durMin: durNorm,
